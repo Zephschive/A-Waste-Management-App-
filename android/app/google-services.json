@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "310153788618",
+    "project_id": "wasteman-b8d2e",
+    "storage_bucket": "wasteman-b8d2e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:310153788618:android:aa9103096f7878b0c28833",
+        "android_client_info": {
+          "package_name": "com.example.waste_mangement_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD89FG_jciwoB4jhi3e_vf_c_wzs1T1-J4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
