@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:waste_mangement_app/Common_widgets/common_widgets.dart';
+
 
 class AppColors {
   // Common Colors
-  static const primary = Color(0xFF4CAF50); // Green
+  static const primary = WMA_Colours.greenPrimary;
   static const accent = Color(0xFFCDDC39); // Lime
 
   // Light Theme Colors

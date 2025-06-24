@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:waste_mangement_app/pages/MainNavigationPage.dart';
 import 'package:waste_mangement_app/themes/theme_notifier.dart';
 import 'package:waste_mangement_app/themes/themes.dart';
 
@@ -19,8 +20,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
     return MaterialApp(
+      
       title: 'Waste Management App',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.light,
         primaryColor: AppColors.primary,
@@ -28,6 +32,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.light(
           primary: AppColors.primary,
           secondary: AppColors.accent,
+
         ),
         textTheme: const TextTheme(
           bodyMedium: TextStyle(color: AppColors.lightText),
@@ -45,60 +50,8 @@ class MyApp extends StatelessWidget {
           bodyMedium: TextStyle(color: AppColors.darkText),
         ),
       ),
-      themeMode: ThemeMode.system, // Uses system setting by default
-      home: const MyHomePage(title: 'Waste Management App'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-
-    return Scaffold(
-      appBar: AppBar(
-
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-
-        title: Text(widget.title),
-      ),
-      body: Center(
-       
-        child: Column(
-       
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), 
+      themeMode: themeNotifier.themeMode, // Uses system setting by default
+      home: BottomNavController(),
     );
   }
 }
