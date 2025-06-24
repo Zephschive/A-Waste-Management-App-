@@ -1,16 +1,30 @@
 # waste_mangement_app
 
-A new Flutter project.
+📦 Waste Management App
+A mobile application built with Flutter to promote efficient waste tracking, reporting, and community engagement. The app is designed to help individuals and city authorities manage waste disposal and promote a cleaner environment.
 
-## Getting Started
+🚀 Features
+♻️ Track Waste Collection — Users can log scheduled pickups and track progress.
 
-This project is a starting point for a Flutter application.
+🗑️ Report Waste Issues — Report illegal dumping or overflowing bins with location tagging.
 
-A few resources to get you started if this is your first Flutter project:
+📍 Bin Locator — Find nearby public waste bins on a map.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+🧾 Waste Tips & Education — Learn how to properly segregate and recycle waste.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+🌗 Dark Mode Support — Toggle between light and dark themes for better accessibility.
+
+🔔 Reminders & Notifications (Planned) — Get notified for pickup schedules and reminders.
+
+📊 Dashboard (Planned) — Visual analytics of waste contribution and collection trends.
+
+🛠️ Tech Stack
+Flutter – Cross-platform UI toolkit
+
+Dart – Programming language
+
+Firebase  – Authentication, Firestore, Cloud Functions
+
+Google Maps API
+
+
