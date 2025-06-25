@@ -3,9 +3,11 @@ import 'package:provider/provider.dart';
 import 'package:waste_mangement_app/pages/MainNavigationPage.dart';
 import 'package:waste_mangement_app/themes/theme_notifier.dart';
 import 'package:waste_mangement_app/themes/themes.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 
 void main() {
+  
   runApp(
     ChangeNotifierProvider(
       create: (_) => ThemeNotifier(),
