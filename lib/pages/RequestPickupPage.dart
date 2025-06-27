@@ -1,7 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:google_place/google_place.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart' as http;
 import 'package:waste_mangement_app/pages/pages_Ext.dart';
+import 'package:geocoding/geocoding.dart';
+
+
 
 class RequestPickupScreen extends StatefulWidget {
   const RequestPickupScreen({super.key});
@@ -11,36 +16,86 @@ class RequestPickupScreen extends StatefulWidget {
 }
 
 class _RequestPickupScreenState extends State<RequestPickupScreen> {
-  late GooglePlace googlePlace;
-  List<AutocompletePrediction> predictions = [];
   final TextEditingController _searchController = TextEditingController();
+  List<dynamic> _predictions = [];
+  final String token ='1234567890';
   String? _selectedLocation;
+  bool _isEditing = true;
 
-  @override
-  void initState() {
-    super.initState();
-    final apiKey = "AIzaSyDUArtqG6Q18-jaZfGaoljjhF23Det8X8A";
-    if (apiKey == null) {
-      throw Exception("GOOGLE_API_KEY not found in .env");
+
+
+Future<String?> _getPlaceNameFromLatLng(LatLng latLng) async {
+  final apiKey = '${dotenv.env['GOOGLE_API_KEY']}';
+  final url = Uri.parse(
+    'https://maps.googleapis.com/maps/api/geocode/json'
+    '?latlng=${latLng.latitude},${latLng.longitude}&key=$apiKey',
+  );
+
+  final response = await http.get(url);
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    if (data['status'] == 'OK') {
+      return data['results'][0]['formatted_address'];
     }
-    googlePlace = GooglePlace(apiKey);
   }
+  return null;
+}
 
-  void autoCompleteSearch(String value) async {
-    if (value.isNotEmpty) {
-      var result = await googlePlace.autocomplete.get(
-        value,
-        components: [Component("country", "gh")],
-      );
-      if (result != null && result.predictions != null && mounted) {
+Future<String?> _getCityNameFromLatLng(LatLng latLng) async {
+  try {
+    List<Placemark> placemarks = await placemarkFromCoordinates(
+      latLng.latitude,
+      latLng.longitude,
+    );
+
+    if (placemarks.isNotEmpty) {
+      final place = placemarks.first;
+
+      // Use null-aware operators to avoid crash
+      final street = place.street ?? '';
+      final locality = place.locality ?? '';
+      final country = place.country ?? '';
+
+      final components = [street, locality, country]
+          .where((element) => element.isNotEmpty)
+          .toList();
+
+      return components.join(', ');
+    }
+  } catch (e) {
+    print('Error in geocoding: $e');
+  }
+  return null;
+}
+
+
+
+
+  Future<void> _searchPlaces(String input) async {
+    if (input.length < 3) {
+      setState(() => _predictions = []);
+      return;
+    }
+      final apiKey = '${dotenv.env['GOOGLE_API_KEY']}';
+    final url = Uri.parse(
+      '${dotenv.env['BASE_URL']}'
+      '?input=$input'
+      '&key=$apiKey'
+      '&sessiontoken=$token'
+    );
+
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      if (body['status'] == 'OK') {
         setState(() {
-          predictions = result.predictions!;
+          _predictions = body['predictions'];
         });
+      } else {
+        print('Places API error: ${body['status']}');
       }
     } else {
-      setState(() {
-        predictions = [];
-      });
+      print('HTTP error ${response.statusCode}');
     }
   }
 
@@ -48,7 +103,8 @@ class _RequestPickupScreenState extends State<RequestPickupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Request pickup", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text("Request pickup",
+            style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         leading: const BackButton(color: Colors.black),
         backgroundColor: Colors.white,
@@ -56,7 +112,7 @@ class _RequestPickupScreenState extends State<RequestPickupScreen> {
       ),
       body: Column(
         children: [
-          // Search Bar with Map Button
+          // ─── Search Bar + Map Button ─────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Container(
@@ -67,29 +123,64 @@ class _RequestPickupScreenState extends State<RequestPickupScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.search, color: Colors.grey),
+                 Icon(
+  _isEditing ? Icons.search : Icons.location_pin,
+  color: _isEditing ? Colors.grey : Colors.green,
+),
+
                   const SizedBox(width: 8),
                   Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: autoCompleteSearch,
-                      decoration: const InputDecoration(
-                        hintText: "Location",
-                        border: InputBorder.none,
-                      ),
-                    ),
-                  ),
+  child: GestureDetector(
+    onTap: () {
+      if (!_isEditing) {
+        setState(() => _isEditing = true);
+      }
+    },
+    child: AbsorbPointer(
+      absorbing: !_isEditing, // disables input if not editing
+      child: TextField(
+        controller: _searchController,
+        onChanged: _searchPlaces,
+        style: TextStyle(color: _isEditing ? Colors.black : Colors.grey),
+        decoration: InputDecoration(
+          hintText: "Location",
+          border: InputBorder.none,
+        ),
+      ),
+    ),
+  ),
+),
                   ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const MapPage()));
-                    },
+                    onPressed: () async {
+  final pickedLatLng = await Navigator.push<LatLng>(
+    context,
+    MaterialPageRoute(builder: (_) => const MapPage()),
+  );
+ 
+  if (pickedLatLng != null) {
+     print(pickedLatLng.toString());
+  final place = await _getCityNameFromLatLng(pickedLatLng); // reverse geocode
+  print(place);
+  if (place != null) {
+    setState(() {
+      _selectedLocation = place;
+      _searchController.text = place;
+          _isEditing = false; 
+    });
+  }
+}
+},
+
+
                     icon: const Icon(Icons.map),
                     label: const Text("Map"),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.black,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
                     ),
                   ),
                 ],
@@ -97,22 +188,25 @@ class _RequestPickupScreenState extends State<RequestPickupScreen> {
             ),
           ),
 
-          // Suggestions list
+          // ─── Suggestions List ───────────────────────────────────────────────
           Expanded(
-            child: predictions.isEmpty
+            child: _predictions.isEmpty
                 ? const Center(child: Text("Search for a location..."))
-                : ListView.builder(
-                    itemCount: predictions.length,
+                : ListView.separated(
+                    itemCount: _predictions.length,
+                    separatorBuilder: (_, __) => const Divider(height: 2 ,thickness: 0.4,),
                     itemBuilder: (context, index) {
-                      final prediction = predictions[index];
+                      final p = _predictions[index];
                       return ListTile(
+                        
                         leading: const Icon(Icons.location_on_outlined),
-                        title: Text(prediction.description ?? ""),
+                        title: Text(p['description'] as String),
                         onTap: () {
                           setState(() {
-                            _selectedLocation = prediction.description;
+                            _selectedLocation = p['description'] as String;
                             _searchController.text = _selectedLocation!;
-                            predictions.clear();
+                            _predictions.clear();
+                                _isEditing = false; 
                           });
                         },
                       );
@@ -120,7 +214,7 @@ class _RequestPickupScreenState extends State<RequestPickupScreen> {
                   ),
           ),
 
-          // Next Button
+          // ─── Next Button ─────────────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: SizedBox(
@@ -131,16 +225,19 @@ class _RequestPickupScreenState extends State<RequestPickupScreen> {
                     ? null
                     : () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("Selected: $_selectedLocation")),
+                          SnackBar(
+                              content: Text("Selected: $_selectedLocation")),
                         );
                       },
                 style: FilledButton.styleFrom(
                   backgroundColor: Colors.green,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 child: const Text(
                   "Next",
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
