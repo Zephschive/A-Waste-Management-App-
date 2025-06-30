@@ -5,7 +5,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:waste_mangement_app/pages/pages_Ext.dart';
 import 'package:geocoding/geocoding.dart';
-
+import 'package:waste_mangement_app/Common_widgets/common_widgets.dart';
 
 
 class RequestPickupScreen extends StatefulWidget {
@@ -21,6 +21,157 @@ class _RequestPickupScreenState extends State<RequestPickupScreen> {
   final String token ='1234567890';
   String? _selectedLocation;
   bool _isEditing = true;
+  String? _selectedPaymentMethod;
+  bool _isLoading = false;
+
+
+
+
+
+void _showCollectorSelectionSheet() {
+  String? selectedCollector;
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) {
+      return StatefulBuilder(builder: (context, setModalState) {
+        return Container(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+
+              // ─── Green Discount Banner (with bottom curve) ─────────────
+              Container(
+                padding: const EdgeInsets.only(top: 8),
+                decoration: const BoxDecoration(
+                  color: WMA_Colours.greenPrimary,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+                ),
+                child:  Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "15% discount apply on this request",
+                      style: TextStyle(color: Colors.white,fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 10,),
+                    Container(
+                padding: const EdgeInsets.all(20),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius:BorderRadius.vertical(top: Radius.circular(25)),
+                ),
+                child: Column(
+                  children: [
+                    // ── Drag Indicator ──
+                    Container(
+                      width: 60,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 24),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+
+                    // ── Collector Cards ──
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        buildCollectorCard(
+                          title: "Collector X",
+                          price: "GH₵ 45",
+                          isSelected: selectedCollector == "X",
+                          onTap: () {
+                            setModalState(() => selectedCollector = "X");
+                          },
+                        ),
+                        buildCollectorCard(
+                          title: "Collector Co",
+                          price: "GH₵ 60",
+                          isSelected: selectedCollector == "Co",
+                          onTap: () {
+                            setModalState(() => selectedCollector = "Co");
+                          },
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // ── Payment Method ──
+                    // ── Payment Method Dropdown ──
+DropdownButtonFormField<String>(
+  decoration: InputDecoration(
+    prefixIcon: const Icon(Icons.attach_money_rounded, color: Colors.green),
+    labelText: "Payment Method",
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+    ),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+  ),
+  value: _selectedPaymentMethod,
+  items: ['Cash', 'Card'].map((method) {
+    return DropdownMenuItem<String>(
+      value: method,
+      child: Text(method),
+    );
+  }).toList(),
+  onChanged: (value) {
+    setModalState(() {
+      _selectedPaymentMethod = value;
+    });
+  },
+),
+
+
+                    const SizedBox(height: 16),
+
+                    // ── Next Button ──
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: selectedCollector == null || _selectedPaymentMethod == null
+    ? null
+    : () {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Collector: $selectedCollector, Payment: $_selectedPaymentMethod")),
+        );
+      },
+
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          "Next",
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+                  ],
+                ),
+              ),
+
+              
+            ],
+          ),
+        );
+      });
+    },
+  );
+}
+
+
 
 
 
@@ -72,32 +223,38 @@ Future<String?> _getCityNameFromLatLng(LatLng latLng) async {
 
 
   Future<void> _searchPlaces(String input) async {
-    if (input.length < 3) {
-      setState(() => _predictions = []);
-      return;
-    }
-      final apiKey = '${dotenv.env['GOOGLE_API_KEY']}';
-    final url = Uri.parse(
-      '${dotenv.env['BASE_URL']}'
-      '?input=$input'
-      '&key=$apiKey'
-      '&sessiontoken=$token'
-    );
-
-    final response = await http.get(url);
-    if (response.statusCode == 200) {
-      final body = jsonDecode(response.body);
-      if (body['status'] == 'OK') {
-        setState(() {
-          _predictions = body['predictions'];
-        });
-      } else {
-        print('Places API error: ${body['status']}');
-      }
-    } else {
-      print('HTTP error ${response.statusCode}');
-    }
+  if (input.length < 3) {
+    setState(() => _predictions = []);
+    return;
   }
+
+  setState(() => _isLoading = true); // Start loading
+
+  final apiKey = '${dotenv.env['GOOGLE_API_KEY']}';
+  final url = Uri.parse(
+    '${dotenv.env['BASE_URL']}'
+    '?input=$input'
+    '&key=$apiKey'
+    '&sessiontoken=$token',
+  );
+
+  final response = await http.get(url);
+  if (response.statusCode == 200) {
+    final body = jsonDecode(response.body);
+    if (body['status'] == 'OK') {
+      setState(() {
+        _predictions = body['predictions'];
+      });
+    } else {
+      print('Places API error: ${body['status']}');
+    }
+  } else {
+    print('HTTP error ${response.statusCode}');
+  }
+
+  setState(() => _isLoading = false); // Stop loading
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -152,24 +309,27 @@ Future<String?> _getCityNameFromLatLng(LatLng latLng) async {
 ),
                   ElevatedButton.icon(
                     onPressed: () async {
+  setState(() => _isLoading = true); // Start loading
+
   final pickedLatLng = await Navigator.push<LatLng>(
     context,
     MaterialPageRoute(builder: (_) => const MapPage()),
   );
- 
+
   if (pickedLatLng != null) {
-     print(pickedLatLng.toString());
-  final place = await _getCityNameFromLatLng(pickedLatLng); // reverse geocode
-  print(place);
-  if (place != null) {
-    setState(() {
-      _selectedLocation = place;
-      _searchController.text = place;
-          _isEditing = false; 
-    });
+    final place = await _getCityNameFromLatLng(pickedLatLng);
+    if (place != null) {
+      setState(() {
+        _selectedLocation = place;
+        _searchController.text = place;
+        _isEditing = false;
+      });
+    }
   }
-}
+
+  setState(() => _isLoading = false); // Stop loading
 },
+
 
 
                     icon: const Icon(Icons.map),
@@ -190,29 +350,33 @@ Future<String?> _getCityNameFromLatLng(LatLng latLng) async {
 
           // ─── Suggestions List ───────────────────────────────────────────────
           Expanded(
-            child: _predictions.isEmpty
-                ? const Center(child: Text("Search for a location..."))
-                : ListView.separated(
-                    itemCount: _predictions.length,
-                    separatorBuilder: (_, __) => const Divider(height: 2 ,thickness: 0.4,),
-                    itemBuilder: (context, index) {
-                      final p = _predictions[index];
-                      return ListTile(
-                        
-                        leading: const Icon(Icons.location_on_outlined),
-                        title: Text(p['description'] as String),
-                        onTap: () {
-                          setState(() {
-                            _selectedLocation = p['description'] as String;
-                            _searchController.text = _selectedLocation!;
-                            _predictions.clear();
-                                _isEditing = false; 
-                          });
-                        },
-                      );
-                    },
-                  ),
-          ),
+  child: _isLoading
+      ? const Center(child: Row( mainAxisAlignment: MainAxisAlignment.center,children: [
+        Text("Loading........"),SizedBox(width: 15,), const Center(child: CircularProgressIndicator())
+      ],))
+      : _predictions.isEmpty
+          ? const Center(child: Text("Search for a location..."))
+          : ListView.separated(
+              itemCount: _predictions.length,
+              separatorBuilder: (_, __) => const Divider(height: 2, thickness: 0.4),
+              itemBuilder: (context, index) {
+                final p = _predictions[index];
+                return ListTile(
+                  leading: const Icon(Icons.location_on_outlined),
+                  title: Text(p['description'] as String),
+                  onTap: () {
+                    setState(() {
+                      _selectedLocation = p['description'] as String;
+                      _searchController.text = _selectedLocation!;
+                      _predictions.clear();
+                      _isEditing = false;
+                    });
+                  },
+                );
+              },
+            ),
+)
+,
 
           // ─── Next Button ─────────────────────────────────────────────────────
           Padding(
@@ -221,14 +385,7 @@ Future<String?> _getCityNameFromLatLng(LatLng latLng) async {
               width: double.infinity,
               height: 50,
               child: FilledButton(
-                onPressed: _selectedLocation == null
-                    ? null
-                    : () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content: Text("Selected: $_selectedLocation")),
-                        );
-                      },
+                onPressed: _selectedLocation == null ? null : _showCollectorSelectionSheet,
                 style: FilledButton.styleFrom(
                   backgroundColor: Colors.green,
                   shape: RoundedRectangleBorder(
@@ -247,3 +404,5 @@ Future<String?> _getCityNameFromLatLng(LatLng latLng) async {
     );
   }
 }
+
+

@@ -226,3 +226,36 @@ class CollectorTile extends StatelessWidget {
     );
   }
 }
+
+Widget buildCollectorCard({
+  required String title,
+  required String price,
+  required bool isSelected,
+  required VoidCallback onTap,
+}) {
+  return GestureDetector(
+    onTap: onTap,
+    child: Container(
+      width: 140,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: isSelected ? Colors.green : Colors.grey.shade300, width: 2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+           Image.asset(WMA_Icons.TruckIcon, scale: 1 ,),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          Text(price),
+        ],
+      ),
+    ),
+  );
+}
+

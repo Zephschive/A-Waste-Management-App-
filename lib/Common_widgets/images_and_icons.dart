@@ -14,3 +14,7 @@ class WMA_profiles{
   static const String Profile_5 = 'assets/img/Profile5.png';
   static const String Profile_6 = 'assets/img/Profile6.png';
 }
+
+class WMA_Icons{
+  static const String TruckIcon = 'assets/icons/moving-truck.png';
+}
