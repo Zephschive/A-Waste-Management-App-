@@ -259,3 +259,43 @@ Widget buildCollectorCard({
   );
 }
 
+
+
+
+
+
+Widget collectorTile({
+  required String name,
+  required String distance,
+  required bool selected,
+  required VoidCallback onTap,
+  required String ProfileImage
+}) {
+  return GestureDetector(
+    onTap: onTap,
+    child: Card(
+      color: selected ? Colors.green.shade100 : null,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        leading:  CircleAvatar(backgroundImage: AssetImage(ProfileImage)),
+        title: Text(name),
+        subtitle: Row(
+          children: const [
+            Icon(Icons.star, size: 16, color: Colors.orange),
+            Icon(Icons.star, size: 16, color: Colors.orange),
+            Icon(Icons.star, size: 16, color: Colors.orange),
+            Icon(Icons.star, size: 16, color: Colors.orange),
+            Icon(Icons.star_border, size: 16, color: Colors.orange),
+          ],
+        ),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(distance, style: const TextStyle(fontSize: 12)),
+            const Text("Available", style: TextStyle(fontSize: 12, color: Colors.green)),
+          ],
+        ),
+      ),
+    ),
+  );
+}

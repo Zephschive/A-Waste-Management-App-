@@ -25,6 +25,104 @@ class _RequestPickupScreenState extends State<RequestPickupScreen> {
   bool _isLoading = false;
 
 
+  void showWasteCollectorSheet(BuildContext context, String paymentMethod) {
+  String? selectedCollector;
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setModalState) {
+          return Container(
+            child: Container(
+                 padding: const EdgeInsets.only(top: 8),
+                decoration: const BoxDecoration(
+                  color: WMA_Colours.greenPrimary,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+                ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                   Text(
+                      "15% discount apply on this request",
+                      style: TextStyle(color: Colors.white,fontWeight: FontWeight.w600),
+                    ),
+
+                     const SizedBox(height: 10,),
+                    Container(
+                padding: const EdgeInsets.all(20),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius:BorderRadius.vertical(top: Radius.circular(25)),
+                ),
+                child:Column(
+                      children: [
+                        Container(
+                      width: 60,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 24),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+
+                    
+                  const SizedBox(height: 16),
+                  Text("Your waste collector", style: Theme.of(context).textTheme.titleMedium),
+              
+                  const SizedBox(height: 12),
+                  collectorTile(
+                    name: "Kwaku Kwarteng",
+                    distance: "0.2 km away",
+                    selected: selectedCollector == "Kwaku",
+                    onTap: () => setModalState(() => selectedCollector = "Kwaku"),
+                    ProfileImage: WMA_profiles.Profile_2
+                  ),
+                  collectorTile(
+                    name: "Jack Obeng",
+                    distance: "2.4 km away",
+                    selected: selectedCollector == "Jack",
+                    onTap: () => setModalState(() => selectedCollector = "Jack"),
+                      ProfileImage: WMA_profiles.Profile_4
+                  ),
+              
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: selectedCollector == null
+                          ? null
+                          : () {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text("Payment: $paymentMethod, Collector: $selectedCollector")),
+                              );
+                            },
+                      child: const Text("Done"),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                      ],
+                ) ,
+                ),
+                  
+              
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+
+
 
 
 
@@ -138,9 +236,7 @@ DropdownButtonFormField<String>(
     ? null
     : () {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Collector: $selectedCollector, Payment: $_selectedPaymentMethod")),
-        );
+        showWasteCollectorSheet(context,  _selectedPaymentMethod!);
       },
 
                         style: FilledButton.styleFrom(
@@ -300,7 +396,7 @@ Future<String?> _getCityNameFromLatLng(LatLng latLng) async {
         onChanged: _searchPlaces,
         style: TextStyle(color: _isEditing ? Colors.black : Colors.grey),
         decoration: InputDecoration(
-          hintText: "Location",
+          hintText: _isLoading?"Loading........" :"Location" ,
           border: InputBorder.none,
         ),
       ),
