@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:waste_mangement_app/pages/pages_Ext.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:waste_mangement_app/Common_widgets/common_widgets.dart';
+import 'package:waste_mangement_app/pages/pages_Ext.dart';
 
 
 class RequestPickupScreen extends StatefulWidget {
@@ -23,6 +24,19 @@ class _RequestPickupScreenState extends State<RequestPickupScreen> {
   bool _isEditing = true;
   String? _selectedPaymentMethod;
   bool _isLoading = false;
+
+
+  void _showLoadingDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    barrierDismissible: false,           // Prevents tapping out to dismiss
+    barrierColor: Colors.black45,        // Dimmed background
+    builder: (_) => const Center(
+      child: CircularProgressIndicator( color: Colors.white,),
+    ),
+  );
+}
+
 
 
   void showWasteCollectorSheet(BuildContext context, String paymentMethod) {
@@ -93,14 +107,35 @@ class _RequestPickupScreenState extends State<RequestPickupScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
+                      style: ButtonStyle(
+                         shape: WidgetStatePropertyAll(BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(3))))
+                      ),
                       onPressed: selectedCollector == null
-                          ? null
-                          : () {
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text("Payment: $paymentMethod, Collector: $selectedCollector")),
-                              );
-                            },
+    ? null
+    : ()async {
+     // close sheet
+
+      
+      _showLoadingDialog(context);
+
+      // 2) Small delay to let the dialog render (optional)
+      await Future.delayed(const Duration(seconds: 4));
+
+     
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PickupSuccessScreen(
+              collectorName: selectedCollector!,
+              distance: selectedCollector == "Kwaku" ? "0.2 km away" : "2.4 km away",
+              rating: 4,
+              isAvailable: true,
+              profileImage: WMA_profiles.Profile_4,
+            ),
+          ),
+        );
+      },
+
                       child: const Text("Done"),
                     ),
                   ),

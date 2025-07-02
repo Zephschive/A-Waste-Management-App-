@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:waste_mangement_app/pages/HomeDashboardPage.dart';
+
+import 'package:waste_mangement_app/pages/pages_Ext.dart';
+import 'package:waste_mangement_app/Common_widgets/common_widgets.dart';
 
 
 class BottomNavController extends StatefulWidget {
@@ -14,7 +16,7 @@ class _BottomNavControllerState extends State<BottomNavController> {
 
   final List<Widget> _pages = [
     const Homedashboardpage(),
-    Center(child: Text('My Waste')),
+     Center(child: Text('My Waste')),
     Center(child: Text('Profile')),
     Center(child: Text('Settings')),
   ];
@@ -25,10 +27,47 @@ class _BottomNavControllerState extends State<BottomNavController> {
 
   @override
   Widget build(BuildContext context) {
+    // Only show on index 0 & 1
+    final bool showPickupButton = _selectedIndex == 0 || _selectedIndex == 1;
+
     return Scaffold(
       body: _pages[_selectedIndex],
+
+      // (1) Add bottomSheet for the pickup button
+      bottomSheet: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        switchInCurve: Curves.easeOut,
+        switchOutCurve: Curves.easeIn,
+        transitionBuilder: (child, animation) {
+          // slide from bottom
+          final offsetAnim = Tween<Offset>(
+            begin: const Offset(0, 1),
+            end: Offset.zero,
+          ).animate(animation);
+          return SlideTransition(position: offsetAnim, child: child);
+        },
+        child: showPickupButton
+            ? Padding(
+                // key ensures AnimatedSwitcher knows this is a new widget
+                key: const ValueKey('request_button'),
+                padding: const EdgeInsets.fromLTRB(16, 5, 16, 16),
+                child: requestPickupButton(() {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const RequestPickupScreen(),
+                    ),
+                  );
+                }),
+              )
+            : const SizedBox(
+                // empty container when hidden
+                key: ValueKey('empty_space'),
+                height: 0,
+              ),
+      ),
+      // (2) Standard BottomNavigationBar
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.transparent,
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         selectedItemColor: Colors.green,
@@ -37,7 +76,8 @@ class _BottomNavControllerState extends State<BottomNavController> {
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.delete), label: 'My Waste'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.settings), label: 'Settings'),
         ],
       ),
     );
