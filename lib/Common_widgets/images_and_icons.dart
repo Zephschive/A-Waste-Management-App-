@@ -17,4 +17,6 @@ class WMA_profiles{
 
 class WMA_Icons{
   static const String TruckIcon = 'assets/icons/moving-truck.png';
+  static const String appleIcon = 'assets/icons/apple1.png';
+  static const String GoogleIcon = 'assets/icons/google1.png';
 }

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:waste_mangement_app/Common_widgets/common_widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:waste_mangement_app/pages/SignInPage.dart';
+import 'package:waste_mangement_app/pages/pages_Ext.dart';
+
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -101,7 +102,7 @@ class WelcomeScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                     onPressed: () {
-                      // TODO: Navigate to create account screen
+                       Navigator.push(context, MaterialPageRoute(builder: (_) => SignUpScreen()));
                     },
                     child: const Text(
                       'Create new account',
