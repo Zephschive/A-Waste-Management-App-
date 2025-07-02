@@ -62,7 +62,7 @@ class _HomedashboardpageState extends State<Homedashboardpage> {
                 ],
               ),
               recentPickupList(),
-              const SizedBox(height: 20),
+              const SizedBox(height: 80),
               
       
             ],
