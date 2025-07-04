@@ -47,7 +47,7 @@ class WelcomeScreen extends StatelessWidget {
           // Centered Texts
           Positioned.fill(
             child: Padding(
-              padding: const EdgeInsets.only(left:10 ),
+              padding: const EdgeInsets.only(left:25 ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,

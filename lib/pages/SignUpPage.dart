@@ -27,24 +27,33 @@ class _SignUpScreenState extends State<SignUpScreen> {
         ),
 
         // Black gradient overlay at bottom
-        Positioned.fill(
-          child: Align(
-            alignment: Alignment.bottomCenter,
-            child: Container(
-              height: MediaQuery.of(context).size.height * 0.4,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    Colors.black,
-                    Colors.transparent,
-                  ],
-                ),
-              ),
+        // Gradient at the bottom with stable blur
+Positioned.fill(
+  child: Align(
+    alignment: Alignment.bottomCenter,
+    child: ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.4,
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.3), // Semi-transparent for dark overlay
+            gradient: const LinearGradient(
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+              colors: [
+                Colors.black87,
+                Colors.black54,
+                Colors.transparent,
+              ],
             ),
           ),
         ),
+      ),
+    ),
+  ),
+),
+
 
         // Main content with blur
         Positioned.fill(
