@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:waste_mangement_app/Common_widgets/Color_ext.dart';
 import 'package:waste_mangement_app/Common_widgets/images_and_icons.dart';
+import 'package:waste_mangement_app/pages/pages_Ext.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -97,7 +98,9 @@ class _SignInScreenState extends State<SignInScreen> {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: TextButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => ForgotPasswordScreen()));
+                          },
                           child: const Text(
                             'Forgot password?',
                             style: TextStyle(color: Colors.white),
@@ -126,6 +129,11 @@ class _SignInScreenState extends State<SignInScreen> {
                       ),
                       const SizedBox(height: 16),
                       // Sign up link
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_)=> SignUpScreen()));  
+                        },
+                        child: 
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: const [
@@ -141,6 +149,7 @@ class _SignInScreenState extends State<SignInScreen> {
                             ),
                           ),
                         ],
+                      ),
                       ),
                       const SizedBox(height: 16),
                       // Divider

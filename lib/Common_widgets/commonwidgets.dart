@@ -299,3 +299,45 @@ Widget collectorTile({
     ),
   );
 }
+
+  Widget buildGoogleButton({required String label}) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () {},
+        icon: Image.asset(WMA_Icons.GoogleIcon, scale: 1.2,),
+        label: Text(
+          label,
+          style: const TextStyle(color: Colors.black),
+        ),
+        style: OutlinedButton.styleFrom(
+          backgroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    );
+  }
+
+    Widget buildAppleButton({ required String label}) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () {},
+        icon: Image.asset(WMA_Icons.appleIcon, scale: 1.2,),
+        label: Text(
+          label,
+          style: const TextStyle(color: Colors.black),
+        ),
+        style: OutlinedButton.styleFrom(
+          backgroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    );
+  }
