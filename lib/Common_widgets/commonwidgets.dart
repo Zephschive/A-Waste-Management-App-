@@ -300,17 +300,18 @@ Widget collectorTile({
   );
 }
 
-  Widget buildGoogleButton({required String label}) {
+  Widget buildGoogleButton({required String label,required VoidCallback function}) {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
-        onPressed: () {},
+        onPressed: function,
         icon: Image.asset(WMA_Icons.GoogleIcon, scale: 1.2,),
         label: Text(
           label,
           style: const TextStyle(color: Colors.black),
         ),
         style: OutlinedButton.styleFrom(
+          side: BorderSide( color: Colors.transparent),
           backgroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 14),
           shape: RoundedRectangleBorder(
@@ -321,23 +322,93 @@ Widget collectorTile({
     );
   }
 
-    Widget buildAppleButton({ required String label}) {
+    Widget buildAppleButton({ required String label, required VoidCallback function}) {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
-        onPressed: () {},
+        onPressed:function ,
         icon: Image.asset(WMA_Icons.appleIcon, scale: 1.2,),
         label: Text(
           label,
           style: const TextStyle(color: Colors.black),
         ),
         style: OutlinedButton.styleFrom(
+          side: BorderSide(color: Colors.transparent),
           backgroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
+          side: BorderSide.none
           ),
         ),
       ),
     );
+  }
+
+class CustomTextField extends StatefulWidget {
+  final TextEditingController controller;
+  final String hint;
+  final bool isPassword;
+
+  const CustomTextField({
+    Key? key,
+    required this.controller,
+    required this.hint,
+    this.isPassword = false,
+  }) : super(key: key);
+
+  @override
+  State<CustomTextField> createState() => _CustomTextFieldState();
+}
+
+class _CustomTextFieldState extends State<CustomTextField> {
+  bool _obscureText = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _obscureText = widget.isPassword;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.4),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white54),
+      ),
+      child: TextField(
+        controller: widget.controller,
+        obscureText: widget.isPassword ? _obscureText : false,
+        style: const TextStyle(color: Colors.white),
+        textAlignVertical: TextAlignVertical.center,
+        decoration: InputDecoration(
+          hintText: widget.hint,
+          hintStyle: const TextStyle(color: Colors.white70),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+          suffixIcon: widget.isPassword
+              ? IconButton(
+                  icon: Icon(
+                    _obscureText ? Icons.visibility_off : Icons.visibility,
+                    color: Colors.white70,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscureText = !_obscureText;
+                    });
+                  },
+                )
+              : null,
+        ),
+      ),
+    );
+  }
+}
+
+
+
+  void showSnackbar(String message, Color Colors, Color TextColor , BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message,style: TextStyle(color: TextColor), ) ,backgroundColor:Colors));
   }

@@ -2,6 +2,8 @@ import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:waste_mangement_app/Common_widgets/common_widgets.dart';
+import 'package:waste_mangement_app/pages/pages_Ext.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -22,6 +24,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   String? selectedOrganization;
   List<String> organizationList = [];
   bool isLoading = false;
+  bool isLoadingOrganizations = true;
 
   @override
   void initState() {
@@ -30,14 +33,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Future<void> fetchOrganizations() async {
+
+     setState(() => isLoadingOrganizations = true);
     try {
       final snapshot = await _firestore.collection('organizations').get();
       final names = snapshot.docs.map((doc) => doc['name'].toString()).toList();
       setState(() {
         organizationList = names;
       });
+      setState(() => isLoadingOrganizations = false);
+
     } catch (e) {
-      debugPrint('Error fetching organizations: $e');
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error Loading Organizations")));
     }
   }
 
@@ -48,12 +55,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
     final confirmPassword = _confirmPasswordController.text.trim();
 
     if (fullName.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty || selectedOrganization == null) {
-      showSnackbar("Please fill all fields.");
+      showSnackbar("Please fill all fields.",Colors.red, Colors.white, context);
       return;
     }
 
     if (password != confirmPassword) {
-      showSnackbar("Passwords do not match.");
+      showSnackbar("Passwords do not match.", Colors.red, Colors.white, context);
       return;
     }
 
@@ -69,18 +76,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
         'email': email,
         'organization': selectedOrganization,
       });
-
-      showSnackbar("Sign up successful!");
-      // Navigate to home or login
+      ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Signup Successful", style: TextStyle(color: Colors.white)),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
+  
+    Future.delayed(const Duration(seconds: 1), () {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const BottomNavController()),
+      );
+    });
     } on FirebaseAuthException catch (e) {
-      showSnackbar(e.message ?? "Sign up failed.");
+      showSnackbar(e.message ?? "Sign up failed.", Colors.red , Colors.white, context);
     } finally {
       setState(() => isLoading = false);
     }
-  }
-
-  void showSnackbar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -91,7 +105,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         children: [
           Positioned.fill(
             child: Image.asset(
-              'assets/your_background_image.png', // Replace with your asset path
+              WMA_Images.GreenDumpster_Background, // Replace with your asset path
               fit: BoxFit.cover,
             ),
           ),
@@ -119,31 +133,49 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           children: [
                             _buildTextField(controller: _fullNameController, hint: 'Full Name'),
                             const SizedBox(height: 16),
-                            DropdownButtonFormField<String>(
-                              value: selectedOrganization,
-                              decoration: InputDecoration(
-                                filled: true,
-                                fillColor: Colors.black.withOpacity(0.3),
-                                hintText: 'Select Organization',
-                                hintStyle: const TextStyle(color: Colors.white70),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                              ),
-                              dropdownColor: Colors.black87,
-                              iconEnabledColor: Colors.white,
-                              items: organizationList
-                                  .map((org) => DropdownMenuItem(
-                                        value: org,
-                                        child: Text(org, style: const TextStyle(color: Colors.white)),
-                                      ))
-                                  .toList(),
-                              onChanged: (val) => setState(() => selectedOrganization = val),
-                            ),
+                          Theme(
+  data: Theme.of(context).copyWith(
+    canvasColor: Colors.black87, // dropdown background
+    inputDecorationTheme: const InputDecorationTheme(
+      hintStyle: TextStyle(color: Colors.white),
+    ),
+  ),
+  child: DropdownButtonFormField<String>(
+    value: selectedOrganization,
+    style: const TextStyle(color: Colors.black),
+    decoration: InputDecoration(
+      hintText: isLoadingOrganizations  ?'Loading......' :'Select Organization',
+      filled: true,
+      fillColor: Colors.white,
+      hintStyle: const TextStyle(color: Colors.white),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.white54),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.white54),
+      ),
+    ),
+    dropdownColor: Colors.white,
+    iconEnabledColor: Colors.black,
+
+    items: organizationList
+        .map((org) => DropdownMenuItem(
+              value: org,
+              child: Text(org, style: const TextStyle(color: Colors.black)),
+            ))
+        .toList(),
+    onChanged: (val) => setState(() => selectedOrganization = val),
+  ),
+),
                             const SizedBox(height: 16),
                             _buildTextField(controller: _emailController, hint: 'Email'),
                             const SizedBox(height: 16),
-                            _buildTextField(controller: _passwordController, hint: 'Password', isPassword: true),
+                           CustomTextField(controller: _passwordController, hint: 'Password', isPassword: true),
                             const SizedBox(height: 16),
-                            _buildTextField(controller: _confirmPasswordController, hint: 'Confirm Password', isPassword: true),
+                           CustomTextField(controller: _confirmPasswordController, hint: 'Confirm password',isPassword: true, ),
+
                             const SizedBox(height: 24),
                             SizedBox(
                               width: double.infinity,
@@ -159,6 +191,49 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     : const Text('Sign up', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
                               ),
                             ),
+
+                             const SizedBox(height: 16),
+                  GestureDetector(
+                    onTap: (){
+                    Navigator.push(context, MaterialPageRoute(builder: (_)=> SignInScreen()));
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Text("Already have an account? ", style: TextStyle(color: Colors.white70)),
+                        Text("Sign in", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                      ],
+                    ),
+                  ),
+
+                   const SizedBox(height: 16),
+                  Row(
+                    children: const [
+                      Expanded(child: Divider(color: Colors.white38)),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8),
+                        child: Text("or", style: TextStyle(color: Colors.white)),
+                      ),
+                      Expanded(child: Divider(color: Colors.white38)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  buildGoogleButton(label: "Continue With Google", function: () {
+                    showSnackbar("Functionality Unavailable at the Moment Use Alternative Method", Colors.black, Colors.white, context);
+                  },),
+                     const SizedBox(height: 12),
+
+                     buildAppleButton(label: "Continue With Apple",function: () {
+                       showSnackbar("Functionality Unavailable at the Moment Use Alternative Method", Colors.black, Colors.white, context);
+                     },),
+                      const SizedBox(height: 20),
+                  Text(
+                    "By signing up, you are confirming that you have read, and agree with all our Terms and Conditions.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+
                           ],
                         ),
                       ),
@@ -173,25 +248,26 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  Widget _buildTextField({required TextEditingController controller, required String hint, bool isPassword = false}) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.4),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white54),
+ Widget _buildTextField({required TextEditingController controller, required String hint, bool isPassword = false}) {
+  return Container(
+    decoration: BoxDecoration(
+      color: Colors.black.withOpacity(0.4),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.white54),
+    ),
+    child: TextField(
+      controller: controller,
+      obscureText: isPassword,
+      style: const TextStyle(color: Colors.white),
+      textAlignVertical: TextAlignVertical.center, // Center the text vertically
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(color: Colors.white70),
+        border: InputBorder.none,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18), // Adjust vertical padding
+        suffixIcon: isPassword ? const Icon(Icons.visibility_off, color: Colors.white70) : null,
       ),
-      child: TextField(
-        controller: controller,
-        obscureText: isPassword,
-        style: const TextStyle(color: Colors.white),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: const TextStyle(color: Colors.white70),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-          suffixIcon: isPassword ? const Icon(Icons.visibility_off, color: Colors.white70) : null,
-        ),
-      ),
-    );
-  }
+    ),
+  );
+}
 }

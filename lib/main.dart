@@ -35,6 +35,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeNotifier = Provider.of<ThemeNotifier>(context);
+   
     return MaterialApp(
       
       title: 'Waste Management App',
@@ -48,6 +49,7 @@ class MyApp extends StatelessWidget {
           secondary: AppColors.accent,
 
         ),
+        
         textTheme: const TextTheme(
           bodyMedium: TextStyle(color: AppColors.lightText),
         ),
@@ -60,11 +62,13 @@ class MyApp extends StatelessWidget {
           primary: AppColors.primary,
           secondary: AppColors.accent,
         ),
+        
+
         textTheme: const TextTheme(
           bodyMedium: TextStyle(color: AppColors.darkText),
         ),
       ),
-      themeMode: themeNotifier.themeMode, // Uses system setting by default
+     themeMode: themeNotifier.themeMode, // Uses system setting by default
       home: WelcomeScreen(),
     );
   }
