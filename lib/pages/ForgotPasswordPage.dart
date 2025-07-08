@@ -49,6 +49,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     setState(() => _isLoading = true);
 
     try {
+   
+      await FirebaseAuth.instance.setSettings(appVerificationDisabledForTesting: true);
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
       showSnackbar("Reset link sent! Check your Gmail.", Colors.green.shade700, Colors.white, context);
 

@@ -13,6 +13,7 @@ class WMA_profiles{
   static const String Profile_4 = 'assets/img/Profile4.png';
   static const String Profile_5 = 'assets/img/Profile5.png';
   static const String Profile_6 = 'assets/img/Profile6.png';
+  static const String Profile_default = 'assets/img/default.jpg';
 }
 
 class WMA_Icons{

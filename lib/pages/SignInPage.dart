@@ -51,7 +51,7 @@ class _SignInScreenState extends State<SignInScreen> {
       const SnackBar(
         content: Text("Login Successful", style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.green,
-        duration: Duration(seconds: 2),
+        duration: Duration(seconds: 1),
       ),
     );
   
