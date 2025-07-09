@@ -1,11 +1,56 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:waste_mangement_app/Common_widgets/common_widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:waste_mangement_app/pages/pages_Ext.dart';
 
 
-class WelcomeScreen extends StatelessWidget {
+class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
+
+  @override
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
+}
+
+class _WelcomeScreenState extends State<WelcomeScreen> {
+
+
+   @override
+void initState() {
+  super.initState();
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    _checkIfLoggedIn();
+  });
+}
+
+Future<void> _checkIfLoggedIn() async {
+  final user = FirebaseAuth.instance.currentUser;
+
+  if (user != null) {
+     await Future.delayed(const Duration(seconds: 3));
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    // Wait a bit before navigating
+    await Future.delayed(const Duration(seconds: 3));
+
+    // Pop the dialog first
+    Navigator.of(context).pop();
+
+    // Navigate to dashboard
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const BottomNavController()),
+    );
+  }
+}
+
+     
+
+ 
 
   @override
   Widget build(BuildContext context) {

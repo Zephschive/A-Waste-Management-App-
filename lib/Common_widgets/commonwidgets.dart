@@ -194,6 +194,31 @@ Widget requestPickupButton(VoidCallback funct) {
 }
 
 
+Widget AddScheduleButton(VoidCallback funct) {
+  return SizedBox(
+    width: double.infinity,
+    height: 50,
+    child: FilledButton(
+      onPressed:funct,
+      style: FilledButton.styleFrom(
+        backgroundColor: WMA_Colours.greenPrimary, // Customize as needed
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      child: const Text(
+        "Add A Schedule",
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+    ),
+  );
+}
+
+
 class CollectorTile extends StatelessWidget {
   final String name;
   final String distance;

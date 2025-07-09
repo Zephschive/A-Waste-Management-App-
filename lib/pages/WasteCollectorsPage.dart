@@ -108,7 +108,7 @@ class _WasteCollectorsPageState extends State<WasteCollectorsPage> {
                     _buildStatusText(collector['availability'] ?? 'Unavailable'),
                   ],
                 ),
-                trailing: Text("${(index + 1) * 0.2} km away"), // Mocked distance
+                trailing: Text("0.2 km away"), // Mocked distance
               );
             },
           );

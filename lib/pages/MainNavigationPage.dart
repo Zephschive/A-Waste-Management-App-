@@ -16,7 +16,7 @@ class _BottomNavControllerState extends State<BottomNavController> {
 
   final List<Widget> _pages = [
     const Homedashboardpage(),
-     Center(child: Text('My Waste')),
+    const MyWastePage(),
     Center(child: Text('Profile')),
     Center(child: Text('Settings')),
   ];
@@ -28,7 +28,8 @@ class _BottomNavControllerState extends State<BottomNavController> {
   @override
   Widget build(BuildContext context) {
     // Only show on index 0 & 1
-    final bool showPickupButton = _selectedIndex == 0 || _selectedIndex == 1;
+    final bool showPickupButton = _selectedIndex == 0;
+    final bool showASButton = _selectedIndex == 1;
 
     return Scaffold(
       body: _pages[_selectedIndex],
@@ -46,19 +47,23 @@ class _BottomNavControllerState extends State<BottomNavController> {
           ).animate(animation);
           return SlideTransition(position: offsetAnim, child: child);
         },
-        child: showPickupButton
+        child: showPickupButton || showASButton
             ? Padding(
                 // key ensures AnimatedSwitcher knows this is a new widget
                 key: const ValueKey('request_button'),
                 padding: const EdgeInsets.fromLTRB(16, 5, 16, 16),
-                child: requestPickupButton(() {
+                child: 
+                showASButton ?
+                AddScheduleButton((){})
+              
+                : requestPickupButton(() {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => const RequestPickupScreen(),
                     ),
                   );
-                }),
+                })
               )
             : const SizedBox(
                 // empty container when hidden

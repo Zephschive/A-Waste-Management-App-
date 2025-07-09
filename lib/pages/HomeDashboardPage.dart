@@ -2,7 +2,8 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:waste_mangement_app/Common_widgets/common_widgets.dart'; 
+import 'package:waste_mangement_app/Common_widgets/common_widgets.dart';
+
 import 'package:waste_mangement_app/pages/pages_Ext.dart'; 
 
 class Homedashboardpage extends StatefulWidget {
@@ -77,7 +78,9 @@ class _HomedashboardpageState extends State<Homedashboardpage> {
                 children: [
                   Text('Waste collectors near you', style: Theme.of(context).textTheme.titleMedium),
                   TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_)=> WasteCollectorsPage()));
+                    },
                     child: const Row(
                       children: [
                         Text('See more'),
@@ -94,7 +97,9 @@ class _HomedashboardpageState extends State<Homedashboardpage> {
                 children: [
                   Text('Recent pickups', style: Theme.of(context).textTheme.titleMedium),
                   TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_)=>PickupHistoryPage()));
+                    },
                     child: const Row(
                       children: [
                         Text('See all'),

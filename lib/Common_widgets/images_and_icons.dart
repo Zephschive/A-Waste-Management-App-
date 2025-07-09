@@ -2,6 +2,7 @@ class WMA_Images {
   static const String Dumptruck_Background = 'assets/img/Dumptruck.png';
   static const String GreenDumpster_Background = 'assets/img/greendumpster.png';
   static const String OrangeMan_Background = 'assets/img/orangeman.png';
+  static const String YellowDump_Background = 'assets/img/yellowdump.png';
 
 }
 
