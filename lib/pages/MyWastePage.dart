@@ -123,7 +123,7 @@ class _MyWastePageState extends State<MyWastePage> {
               decoration: BoxDecoration(
                  boxShadow: [
       BoxShadow(
-        color: Colors.black12,
+        color: Colors.black38,
         blurRadius: 15,
         offset: Offset(0, 3),
       ),

@@ -54,7 +54,9 @@ class _BottomNavControllerState extends State<BottomNavController> {
                 padding: const EdgeInsets.fromLTRB(16, 5, 16, 16),
                 child: 
                 showASButton ?
-                AddScheduleButton((){})
+                AddScheduleButton((){
+                  showAddScheduleModal(context);
+                })
               
                 : requestPickupButton(() {
                   Navigator.push(
