@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:waste_mangement_app/Common_widgets/common_widgets.dart';
 
@@ -9,6 +11,52 @@ class MyWastePage extends StatefulWidget {
 }
 
 class _MyWastePageState extends State<MyWastePage> {
+
+
+Stream<DocumentSnapshot<Map<String, dynamic>>> getUserScheduleStream() {
+  final userEmail = FirebaseAuth.instance.currentUser?.email;
+  if (userEmail == null) {
+    throw Exception('No user logged in');
+  }
+
+  return FirebaseFirestore.instance
+      .collection('users')
+      .where('email', isEqualTo: userEmail)
+      .limit(1)
+      .snapshots()
+      .map((querySnapshot) => querySnapshot.docs.first);
+}
+
+  
+
+
+//   Future<List<Map<String, dynamic>>> fetchPickupSchedule() async {
+//   final userEmail = FirebaseAuth.instance.currentUser?.email;
+
+//   if (userEmail == null) {
+//     throw Exception('No user logged in');
+//   }
+
+//   final querySnapshot = await FirebaseFirestore.instance
+//       .collection('users')
+//       .where('email', isEqualTo: userEmail)
+//       .limit(1)
+//       .get();
+
+//   if (querySnapshot.docs.isEmpty) {
+//     throw Exception('User document not found');
+//   }
+
+//   final userDoc = querySnapshot.docs.first;
+//   final data = userDoc.data();
+//   final scheduleList = data['schedules'] as List<dynamic>?;
+
+//   if (scheduleList == null) return [];
+
+//   // Convert dynamic list to List<Map<String, dynamic>>
+//   return scheduleList.cast<Map<String, dynamic>>();
+// }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -84,9 +132,6 @@ class _MyWastePageState extends State<MyWastePage> {
                   const SizedBox(height: 5),
                   Row(
                     children: [
-                      
-                  
-
                       const Text(
                         'Your current waste collector',
                         style: TextStyle(color: Colors.white70, fontSize: 12),
@@ -118,103 +163,198 @@ class _MyWastePageState extends State<MyWastePage> {
             ),
             const SizedBox(height: 20),
             // Pickup schedule card
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                 boxShadow: [
-      BoxShadow(
-        color: Colors.black38,
-        blurRadius: 15,
-        offset: Offset(0, 3),
-      ),
-    ],
-                color: const Color(0xFFFFFFFF),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Your pickup schedule',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                      color: WMA_Colours.greenPrimary,
-                    ),
+
+  StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+  stream: getUserScheduleStream(),
+  builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (!snapshot.hasData || snapshot.data == null || !snapshot.data!.exists) {
+      return const Center(child: Text("No pickup schedule found at the moment."));
+    }
+
+    final data = snapshot.data!.data();
+    final scheduleList = (data?['schedules'] as List<dynamic>?)
+        ?.cast<Map<String, dynamic>>() ?? [];
+
+    if (scheduleList.isEmpty) {
+      return const Center(child: Text("No pickup schedule found at the moment."));
+    }
+
+    return Column(
+      children: scheduleList.map((schedule) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 15,
+                  offset: Offset(0, 3),
+                ),
+              ],
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Your pickup schedule',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                    color: WMA_Colours.greenPrimary,
                   ),
-                  Divider(),
-                  const SizedBox(height: 5),
-                  Row(
-                    
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
-                      Column(
-                        children: [
-                        Row(
-                          children: [
-                                Icon(Icons.calendar_today, size: 16, color: Colors.grey),SizedBox(width: 3,),  Text('Day',
-                              style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w800)),
-                          ],
+                ),
+                const Divider(color: Colors.black54, thickness: 0.5),
+                const SizedBox(height: 5),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _scheduleColumn(Icons.calendar_today, "Day", schedule['day']),
+                    _scheduleColumn(Icons.access_time, "Time", schedule['time']),
+                    _scheduleColumn(Icons.repeat, "Frequency", schedule['frequency']),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                const Divider(color: Colors.black54, thickness: 0.5),
+                const SizedBox(height: 12),
+                InkWell(
+                  onTap: () {},
+                  child: const Row(
+                    children: [
+                      Text(
+                        'Edit schedule',
+                        style: TextStyle(
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w500,
                         ),
-                          SizedBox(height: 8),
-                          Text('Tuesday',
-                              style: TextStyle(fontSize: 14, color: Colors.black87)),
-                        ],
                       ),
-                      Column(
-                        children: [
-                         Row(
-                          children: [
-                             Icon(Icons.access_time, size: 16, color: Colors.grey),SizedBox(width: 3,), Text('Time',
-                              style: TextStyle(fontSize: 10, color: Colors.grey)),
-                          ],
-                         ),
-                          SizedBox(height: 8),
-                          Text('10:00 am',
-                              style: TextStyle(fontSize: 14, color: Colors.black87)),
-                        ],
-                      ),
-                      Column(
-                        children: [
-                         Row(children: [
-                           Icon(Icons.repeat, size: 16, color: Colors.grey), SizedBox(width: 3,), Text('Frequency',
-                              style: TextStyle(fontSize: 10, color: Colors.grey)),
-                         ],),
-                          SizedBox(height: 8),
-                          Text('Weekly',
-                              style: TextStyle(fontSize: 14, color: Colors.black87)),
-                        ],
-                      ),
+                      SizedBox(width: 6),
+                      Icon(Icons.arrow_forward_ios, size: 14, color: Colors.black87),
                     ],
                   ),
-                  SizedBox(height: 10,),
-                  Divider(),
-                  const SizedBox(height: 12),
-                  InkWell(
-                    onTap: () {},
-                    child: const Row(
-                      children: [
-                        Text(
-                          'Edit schedule',
-                          style: TextStyle(
-                            color: Colors.black87,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        SizedBox(width: 6),
-                        Icon(Icons.arrow_forward_ios, size: 14, color: Colors.black87),
-                      ],
-                    ),
-                  )
-                ],
-              ),
+                )
+              ],
             ),
-            const SizedBox(height: 30),
-            // Request button will go here later
+          ),
+        );
+      }).toList(),
+    );
+  },
+),
+
+
+//             FutureBuilder<List<Map<String, dynamic>>>(
+//   future: fetchPickupSchedule(),
+//   builder: (context, snapshot) {
+//     if (snapshot.connectionState == ConnectionState.waiting) {
+//       return const Center(child: CircularProgressIndicator());
+//     }
+
+//     if (snapshot.hasError) {
+//       return Center(child: const Text("No pickup schedule found at the moment."));
+//     }
+
+//     final scheduleList = snapshot.data ?? [];
+
+//     if (scheduleList.isEmpty) {
+//         return Center(child: const Text("No pickup schedule found at the moment."));
+//     }
+
+//     return Column(
+//       children: scheduleList.map((schedule) {
+//         return Padding(
+//           padding: const EdgeInsets.only(bottom: 16.0),
+//           child: Container(
+//             padding: const EdgeInsets.all(16),
+//             decoration: BoxDecoration(
+//               boxShadow: const [
+//                 BoxShadow(
+//                   color: Colors.black12,
+//                   blurRadius: 15,
+//                   offset: Offset(0, 3),
+//                 ),
+//               ],
+//               color: const Color(0xFFFFFFFF),
+//               borderRadius: BorderRadius.circular(12),
+//             ),
+//             child: Column(
+//               crossAxisAlignment: CrossAxisAlignment.start,
+//               children: [
+//                 const Text(
+//                   'Your pickup schedule',
+//                   style: TextStyle(
+//                     fontWeight: FontWeight.w600,
+//                     fontSize: 15,
+//                     color: WMA_Colours.greenPrimary,
+//                   ),
+//                 ),
+//                 const Divider(color: Colors.black54, thickness: 0.5),
+//                 const SizedBox(height: 5),
+//                 Row(
+//                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                   children: [
+//                     _scheduleColumn(Icons.calendar_today, "Day", schedule['day']),
+//                     _scheduleColumn(Icons.access_time, "Time", schedule['time']),
+//                     _scheduleColumn(Icons.repeat, "Frequency", schedule['frequency']),
+//                   ],
+//                 ),
+//                 const SizedBox(height: 10),
+//                 const Divider(color: Colors.black54, thickness: 0.5),
+//                 const SizedBox(height: 12),
+//                 InkWell(
+//                   onTap: () {},
+//                   child: const Row(
+//                     children: [
+//                       Text(
+//                         'Edit schedule',
+//                         style: TextStyle(
+//                           color: Colors.black87,
+//                           fontWeight: FontWeight.w500,
+//                         ),
+//                       ),
+//                       SizedBox(width: 6),
+//                       Icon(Icons.arrow_forward_ios, size: 14, color: Colors.black87),
+//                     ],
+//                   ),
+//                 )
+//               ],
+//             ),
+//           ),
+//         );
+//       }).toList(),
+//     );
+//   },
+// ),
+            const SizedBox(height: 80),
+            
           ],
         ),
       ),
   
     );
   }
+}
+
+Widget _scheduleColumn(IconData icon, String label, String value) {
+  return Column(
+    children: [
+      Row(
+        children: [
+          Icon(icon, size: 16, color: Colors.grey),
+          const SizedBox(width: 3),
+          Text(label,
+              style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w800)),
+        ],
+      ),
+      const SizedBox(height: 8),
+      Text(value, style: const TextStyle(fontSize: 14, color: Colors.black87)),
+    ],
+  );
 }

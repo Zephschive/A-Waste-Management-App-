@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:waste_mangement_app/Common_widgets/Color_ext.dart';
+import 'package:waste_mangement_app/Common_widgets/commonwidgets.dart';
+import 'package:waste_mangement_app/pages/MyWastePage.dart';
 
 
 
@@ -9,6 +12,9 @@ Future<void> showAddScheduleModal(BuildContext context) async {
   String? selectedDay;
   TimeOfDay? selectedTime;
   String? selectedFrequency;
+
+  final dayController = TextEditingController();
+  final timeController = TextEditingController();
 
   await showModalBottomSheet(
     context: context,
@@ -38,11 +44,12 @@ Future<void> showAddScheduleModal(BuildContext context) async {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              const Text('Edit schedule', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text('Add schedule', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
 
               // Day Picker
               TextFormField(
+                controller: dayController,
                 readOnly: true,
                 onTap: () async {
                   final result = await showDatePicker(
@@ -52,11 +59,13 @@ Future<void> showAddScheduleModal(BuildContext context) async {
                     lastDate: DateTime(2030),
                   );
                   if (result != null) {
-                    selectedDay = result.toIso8601String();
+                    selectedDay = result.toIso8601String().split('T').first;
+                    dayController.text = "${result.day}/${result.month}/${result.year}";
                   }
                 },
                 decoration: InputDecoration(
                   labelText: 'Select your preferred pickup day',
+                  labelStyle: TextStyle(color: Colors.grey[600]),
                   suffixIcon: Icon(Icons.calendar_today),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 ),
@@ -66,6 +75,7 @@ Future<void> showAddScheduleModal(BuildContext context) async {
 
               // Time Picker
               TextFormField(
+                controller: timeController,
                 readOnly: true,
                 onTap: () async {
                   final result = await showTimePicker(
@@ -74,10 +84,12 @@ Future<void> showAddScheduleModal(BuildContext context) async {
                   );
                   if (result != null) {
                     selectedTime = result;
+                    timeController.text = result.format(context);
                   }
                 },
                 decoration: InputDecoration(
                   labelText: 'Select your preferred pickup time',
+                  labelStyle: TextStyle(color: Colors.grey[600]),
                   suffixIcon: Icon(Icons.access_time),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 ),
@@ -88,10 +100,11 @@ Future<void> showAddScheduleModal(BuildContext context) async {
               // Frequency Dropdown
               DropdownButtonFormField<String>(
                 decoration: InputDecoration(
-                  labelText: 'Select your preferred',
+                  labelText: 'Select your preferred frequency',
+                  labelStyle: TextStyle(color: Colors.grey[600]),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 ),
-                items: ['Once a week', 'Twice a week', 'Daily']
+                items: ['Once a week', 'Twice a week', 'Daily', 'Weekly', 'Monthly']
                     .map((freq) => DropdownMenuItem(value: freq, child: Text(freq)))
                     .toList(),
                 onChanged: (val) {
@@ -110,19 +123,59 @@ Future<void> showAddScheduleModal(BuildContext context) async {
                 ),
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
-                    final userEmail = FirebaseAuth.instance.currentUser?.email;
-                    if (userEmail != null) {
-                      final scheduleData = {
-                        'day': selectedDay,
-                        'time': selectedTime?.format(context),
-                        'frequency': selectedFrequency,
-                      };
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (_) => const Center(child: CircularProgressIndicator()),
+                    );
 
-                      await FirebaseFirestore.instance.collection('users')
-                          .doc(userEmail)
-                          .set({'schedule': scheduleData}, SetOptions(merge: true));
+                    try {
+                   final userEmail = FirebaseAuth.instance.currentUser?.email;
 
-                      Navigator.pop(context);
+if (userEmail != null) {
+  final querySnapshot = await FirebaseFirestore.instance
+      .collection('users')
+      .where('email', isEqualTo: userEmail)
+      .limit(1)
+      .get();
+
+  if (querySnapshot.docs.isNotEmpty) {
+    final docId = querySnapshot.docs.first.id;
+
+    final scheduleData = {
+      'day': selectedDay,
+      'time': selectedTime?.format(context),
+      'frequency': selectedFrequency,
+    
+    };
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(docId)
+        .update({
+          'schedules': FieldValue.arrayUnion([scheduleData])
+        });
+
+    // Show success
+    showSnackbar("Schedule Added Successfully", WMA_Colours.greenPrimary, Colors.white, context);
+    
+  } else {
+    // User document not found
+        showSnackbar("User not found... An Error has occurred", Colors.red, Colors.white, context);
+  }
+
+
+
+
+                        Navigator.pop(context); // Close loading
+                        Navigator.pop(context); // Close bottom sheet
+                          showSnackbar("Schedule Added Successfully", WMA_Colours.greenPrimary, Colors.white, context);
+                      }
+                    } catch (e) {
+                      Navigator.pop(context); // Close loading
+                       Navigator.pop(context);
+                       showSnackbar("An Error Occurred : ${e.toString()}", Colors.red, Colors.white, context);
+                      
                     }
                   }
                 },
@@ -135,6 +188,7 @@ Future<void> showAddScheduleModal(BuildContext context) async {
     },
   );
 }
+
 
 
 Future<void> showEditScheduleModal(BuildContext context) async {
