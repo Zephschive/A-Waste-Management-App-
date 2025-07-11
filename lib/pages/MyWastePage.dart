@@ -176,76 +176,81 @@ Stream<DocumentSnapshot<Map<String, dynamic>>> getUserScheduleStream() {
     }
 
     final data = snapshot.data!.data();
-    final scheduleList = (data?['schedules'] as List<dynamic>?)
+    final scheduleList = (data?['schedules'])
         ?.cast<Map<String, dynamic>>() ?? [];
 
-    if (scheduleList.isEmpty) {
+    if (scheduleList == null) {
       return const Center(child: Text("No pickup schedule found at the moment."));
     }
 
-    return Column(
-      children: scheduleList.map((schedule) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 16.0),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 15,
-                  offset: Offset(0, 3),
-                ),
-              ],
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
+    return  Column(
+  children: scheduleList.asMap().entries.map<Widget>((entry) {
+    int index = entry.key;
+    Map<String, dynamic> schedule = entry.value;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 15,
+              offset: Offset(0, 3),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          ],
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Your pickup schedule',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+                color: WMA_Colours.greenPrimary,
+              ),
+            ),
+            const Divider(color: Colors.black54, thickness: 0.5),
+            const SizedBox(height: 5),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Your pickup schedule',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                    color: WMA_Colours.greenPrimary,
-                  ),
-                ),
-                const Divider(color: Colors.black54, thickness: 0.5),
-                const SizedBox(height: 5),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _scheduleColumn(Icons.calendar_today, "Day", schedule['day']),
-                    _scheduleColumn(Icons.access_time, "Time", schedule['time']),
-                    _scheduleColumn(Icons.repeat, "Frequency", schedule['frequency']),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                const Divider(color: Colors.black54, thickness: 0.5),
-                const SizedBox(height: 12),
-                InkWell(
-                  onTap: () {},
-                  child: const Row(
-                    children: [
-                      Text(
-                        'Edit schedule',
-                        style: TextStyle(
-                          color: Colors.black87,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      SizedBox(width: 6),
-                      Icon(Icons.arrow_forward_ios, size: 14, color: Colors.black87),
-                    ],
-                  ),
-                )
+                _scheduleColumn(Icons.calendar_today, "Day", schedule['day']),
+                _scheduleColumn(Icons.access_time, "Time", schedule['time']),
+                _scheduleColumn(Icons.repeat, "Frequency", schedule['frequency']),
               ],
             ),
-          ),
-        );
-      }).toList(),
+            const SizedBox(height: 10),
+            const Divider(color: Colors.black54, thickness: 0.5),
+            const SizedBox(height: 12),
+            InkWell(
+              onTap: () {
+                showEditScheduleModal(context, schedule, index);
+              },
+              child: const Row(
+                children: [
+                  Text(
+                    'Edit schedule',
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  SizedBox(width: 6),
+                  Icon(Icons.arrow_forward_ios, size: 14, color: Colors.black87),
+                ],
+              ),
+            )
+          ],
+        ),
+      ),
     );
+  }).toList(), // << Ensure this is List<Widget>
+);
+
   },
 ),
 

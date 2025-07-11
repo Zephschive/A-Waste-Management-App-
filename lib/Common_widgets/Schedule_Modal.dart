@@ -191,12 +191,16 @@ if (userEmail != null) {
 
 
 
-Future<void> showEditScheduleModal(BuildContext context) async {
+Future<void> showEditScheduleModal(BuildContext context,  Map<String, dynamic> currentSchedule,
+  int indexToUpdate) async {
   final _formKey = GlobalKey<FormState>();
   final userEmail = FirebaseAuth.instance.currentUser?.email;
   String? selectedDay;
   TimeOfDay? selectedTime;
   String? selectedFrequency;
+
+  selectedDay = currentSchedule['day'];
+  final existingTime = currentSchedule['time'];
 
   // Fetch current user's existing schedule
   final userDoc = await FirebaseFirestore.instance.collection('users').doc(userEmail).get();
@@ -327,12 +331,38 @@ Future<void> showEditScheduleModal(BuildContext context) async {
                       'frequency': selectedFrequency,
                     };
 
-                    await FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(userEmail)
-                        .set({'schedule': updatedSchedule}, SetOptions(merge: true));
+                  try{
+                      final userDoc = await FirebaseFirestore.instance
+    .collection('users')
+    .doc(userEmail)
+    .get();
 
-                    Navigator.pop(context);
+final data = userDoc.data();
+final schedules = (data?['schedules'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ?? [];
+
+if (indexToUpdate < schedules.length) {
+  schedules[indexToUpdate] = {
+    'day': selectedDay,
+    'time': selectedTime?.format(context),
+    'frequency': selectedFrequency,
+  };
+
+  await FirebaseFirestore.instance
+      .collection('users')
+      .doc(userEmail)
+      .update({'schedules': schedules});
+}
+  Navigator.pop(context);
+
+showSnackbar("Update Successful", Colors.green, Colors.white, context);
+                  }catch(e){
+                    showSnackbar("An Error has occured : ${e.toString()}", Colors.red, Colors.white, context);
+
+                  }
+
+
+                  
+                  
                   }
                 },
                 child: const Text('Done', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
