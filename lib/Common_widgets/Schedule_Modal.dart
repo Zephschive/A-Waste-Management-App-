@@ -198,6 +198,9 @@ Future<void> showEditScheduleModal(BuildContext context,  Map<String, dynamic> c
   String? selectedDay;
   TimeOfDay? selectedTime;
   String? selectedFrequency;
+  final timeController = TextEditingController();
+  final dayController = TextEditingController();
+
 
   selectedDay = currentSchedule['day'];
   final existingTime = currentSchedule['time'];
@@ -219,6 +222,21 @@ Future<void> showEditScheduleModal(BuildContext context,  Map<String, dynamic> c
     }
     selectedFrequency = existingSchedule['frequency'];
   }
+
+
+  if (existingTime != null && existingTime is String) {
+  final timeParts = existingTime.split(':');
+  selectedTime = TimeOfDay(
+    hour: int.parse(timeParts[0]),
+    minute: int.parse(timeParts[1].split(' ')[0]),
+  );
+  timeController.text = selectedTime.format(context);
+}
+
+if (selectedDay != null) {
+  dayController.text = DateTime.parse(selectedDay).toLocal().toString().split(' ')[0];
+}
+
 
   await showModalBottomSheet(
     context: context,
@@ -254,20 +272,20 @@ Future<void> showEditScheduleModal(BuildContext context,  Map<String, dynamic> c
               // Day Picker
               TextFormField(
                 readOnly: true,
-                controller: TextEditingController(
-                  text: selectedDay != null ? DateTime.parse(selectedDay!).toLocal().toString().split(' ')[0] : '',
-                ),
+                controller: dayController,
                 onTap: () async {
-                  final result = await showDatePicker(
-                    context: context,
-                    initialDate: selectedDay != null ? DateTime.parse(selectedDay!) : DateTime.now(),
-                    firstDate: DateTime(2023),
-                    lastDate: DateTime(2030),
-                  );
-                  if (result != null) {
-                    selectedDay = result.toIso8601String();
-                  }
-                },
+  final result = await showDatePicker(
+    context: context,
+    initialDate: selectedDay != null ? DateTime.parse(selectedDay!) : DateTime.now(),
+    firstDate: DateTime(2020),
+    lastDate: DateTime(2030),
+  );
+  if (result != null) {
+    selectedDay = result.toIso8601String();
+    dayController.text = result.toLocal().toString().split(' ')[0];
+  }
+},
+
                 decoration: InputDecoration(
                   labelText: 'Select your preferred pickup day',
                   suffixIcon: Icon(Icons.calendar_today),
@@ -280,18 +298,18 @@ Future<void> showEditScheduleModal(BuildContext context,  Map<String, dynamic> c
               // Time Picker
               TextFormField(
                 readOnly: true,
-                controller: TextEditingController(
-                  text: selectedTime != null ? selectedTime!.format(context) : '',
-                ),
+                controller: timeController,
                 onTap: () async {
-                  final result = await showTimePicker(
-                    context: context,
-                    initialTime: selectedTime ?? TimeOfDay.now(),
-                  );
-                  if (result != null) {
-                    selectedTime = result;
-                  }
-                },
+                final result = await showTimePicker(
+                context: context,
+                initialTime: selectedTime ?? TimeOfDay.now(),
+              );
+              if (result != null) {
+                selectedTime = result;
+                timeController.text = selectedTime!.format(context);
+              }
+            }
+,
                 decoration: InputDecoration(
                   labelText: 'Select your preferred pickup time',
                   suffixIcon: Icon(Icons.access_time),
