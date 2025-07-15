@@ -17,7 +17,7 @@ class _BottomNavControllerState extends State<BottomNavController> {
   final List<Widget> _pages = [
     const Homedashboardpage(),
     const MyWastePage(),
-    Center(child: Text('Profile')),
+    const ProfilePage(),
     Center(child: Text('Settings')),
   ];
 

@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:waste_mangement_app/Common_widgets/common_widgets.dart';
+import 'package:waste_mangement_app/pages/Notificationspage.dart';
+import 'package:waste_mangement_app/pages/pages_Ext.dart';
 
 class MyWastePage extends StatefulWidget {
   const MyWastePage({super.key});
@@ -73,13 +75,19 @@ Stream<DocumentSnapshot<Map<String, dynamic>>> getUserScheduleStream() {
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
+          
+          IconButton(
+            icon: const Icon(Icons.history, color: Colors.black),
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_)=>PickupHistoryPage()));
+            },
+          ),
+
           IconButton(
             icon: const Icon(Icons.notifications_none, color: Colors.black),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings_outlined, color: Colors.black),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_)=> NotificationsPage()));
+            },
           ),
         ],
       ),

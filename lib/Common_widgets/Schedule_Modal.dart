@@ -193,39 +193,19 @@ if (userEmail != null) {
 
 Future<void> showEditScheduleModal(BuildContext context,  Map<String, dynamic> currentSchedule,
   int indexToUpdate) async {
-  final _formKey = GlobalKey<FormState>();
-  final userEmail = FirebaseAuth.instance.currentUser?.email;
-  String? selectedDay;
-  TimeOfDay? selectedTime;
-  String? selectedFrequency;
-  final timeController = TextEditingController();
-  final dayController = TextEditingController();
+final _formKey = GlobalKey<FormState>();
+final userEmail = FirebaseAuth.instance.currentUser?.email;
 
+String? selectedDay = currentSchedule['day'];
+TimeOfDay? selectedTime;
+String? selectedFrequency = currentSchedule['frequency'];
 
-  selectedDay = currentSchedule['day'];
-  final existingTime = currentSchedule['time'];
+final timeController = TextEditingController();
+final dayController = TextEditingController();
 
-  // Fetch current user's existing schedule
-  final userDoc = await FirebaseFirestore.instance.collection('users').doc(userEmail).get();
-  final data = userDoc.data();
-  final existingSchedule = data?['schedule'];
-
-  if (existingSchedule != null) {
-    selectedDay = existingSchedule['day'];
-    final existingTime = existingSchedule['time'];
-    if (existingTime != null && existingTime is String) {
-      final timeParts = existingTime.split(':');
-      selectedTime = TimeOfDay(
-        hour: int.parse(timeParts[0]),
-        minute: int.parse(timeParts[1].split(' ')[0]),
-      );
-    }
-    selectedFrequency = existingSchedule['frequency'];
-  }
-
-
-  if (existingTime != null && existingTime is String) {
-  final timeParts = existingTime.split(':');
+// Set timeController from currentSchedule['time']
+if (currentSchedule['time'] != null && currentSchedule['time'] is String) {
+  final timeParts = currentSchedule['time'].split(':');
   selectedTime = TimeOfDay(
     hour: int.parse(timeParts[0]),
     minute: int.parse(timeParts[1].split(' ')[0]),
@@ -233,6 +213,7 @@ Future<void> showEditScheduleModal(BuildContext context,  Map<String, dynamic> c
   timeController.text = selectedTime.format(context);
 }
 
+// Set dayController from selectedDay
 if (selectedDay != null) {
   dayController.text = DateTime.parse(selectedDay).toLocal().toString().split(' ')[0];
 }
@@ -326,7 +307,7 @@ if (selectedDay != null) {
                   labelText: 'Select your preferred',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 ),
-                items: ['Once a week', 'Twice a week', 'Daily']
+                items: ['Once a week', 'Twice a week', 'Daily', 'Weekly', 'Monthly']
                     .map((freq) => DropdownMenuItem(value: freq, child: Text(freq)))
                     .toList(),
                 onChanged: (val) => selectedFrequency = val,
@@ -350,26 +331,32 @@ if (selectedDay != null) {
                     };
 
                   try{
-                      final userDoc = await FirebaseFirestore.instance
+                  final querySnapshot = await FirebaseFirestore.instance
     .collection('users')
-    .doc(userEmail)
+    .where('email', isEqualTo: userEmail)
+    .limit(1)
     .get();
 
-final data = userDoc.data();
-final schedules = (data?['schedules'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ?? [];
+if (querySnapshot.docs.isNotEmpty) {
+  final userDoc = querySnapshot.docs.first;
+  final userId = userDoc.id;
+  final data = userDoc.data();
+  final schedules = (data['schedules'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ?? [];
 
-if (indexToUpdate < schedules.length) {
-  schedules[indexToUpdate] = {
-    'day': selectedDay,
-    'time': selectedTime?.format(context),
-    'frequency': selectedFrequency,
-  };
+  if (indexToUpdate < schedules.length) {
+    schedules[indexToUpdate] = {
+      'day': DateTime.parse(selectedDay!).toLocal().toString().split(' ')[0],
+      'time': selectedTime?.format(context),
+      'frequency': selectedFrequency,
+    };
 
-  await FirebaseFirestore.instance
-      .collection('users')
-      .doc(userEmail)
-      .update({'schedules': schedules});
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId) 
+        .update({'schedules': schedules});
+  }
 }
+
   Navigator.pop(context);
 
 showSnackbar("Update Successful", Colors.green, Colors.white, context);
