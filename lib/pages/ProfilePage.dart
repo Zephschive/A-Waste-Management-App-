@@ -29,25 +29,23 @@ class _ProfilePageState extends State<ProfilePage> {
     if (userEmail == null) return;
 
     try {
-       final querySnapshot = await FirebaseFirestore.instance
-    .collection('users')
-    .where('email', isEqualTo: userEmail)
-    .limit(1)
-    .get();
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: userEmail)
+          .limit(1)
+          .get();
 
-    if (querySnapshot.docs.isNotEmpty) {
-  final userDoc = querySnapshot.docs.first;
-  final userId = userDoc.id;
-  final data = userDoc.data();
-    
+      if (querySnapshot.docs.isNotEmpty) {
+        final userDoc = querySnapshot.docs.first;
+        final data = userDoc.data();
 
-      setState(() {
-        name = data['fullName'];
-        email = userEmail;
-        phone = data['phone'];
-        isLoading = false;
-      });
-    }
+        setState(() {
+          name = data['fullName'];
+          email = userEmail;
+          phone = data['phone'];
+          isLoading = false;
+        });
+      }
     } catch (e) {
       print("Failed to load user data: $e");
     }
@@ -66,7 +64,9 @@ class _ProfilePageState extends State<ProfilePage> {
           decoration: const InputDecoration(hintText: '+233 55 000 0000'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () async {
               final newPhone = controller.text.trim();
@@ -91,15 +91,18 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildField({required String title, required Widget child}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      
-      children: [
-        const SizedBox(height: 20),
-        Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black38)),
-        const SizedBox(height: 5),
-        child,
-      ],
+    return Padding(
+      padding: const EdgeInsets.only(top: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title,
+              style: const TextStyle(
+                  fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
+          const SizedBox(height: 4),
+          child,
+        ],
+      ),
     );
   }
 
@@ -107,74 +110,108 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: const Text('Profile', style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
         elevation: 0,
-         actions: [
-          
+        foregroundColor: Colors.black,
+        actions: [
           IconButton(
             icon: const Icon(Icons.history, color: Colors.black),
             onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_)=>PickupHistoryPage()));
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => PickupHistoryPage()));
             },
           ),
-
           IconButton(
             icon: const Icon(Icons.notifications_none, color: Colors.black),
             onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_)=> NotificationsPage()));
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => NotificationsPage()));
             },
           ),
-        ]
+        ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  const SizedBox(height: 20),
-                  CircleAvatar(
-                    radius: 60,
-                    backgroundImage:  AssetImage(WMA_profiles.Profile_default), // replace with real image
-                    child: Align(
-                      alignment: Alignment.bottomRight,
-                      child: CircleAvatar(
-                        backgroundColor: Colors.green,
-                        radius: 18,
-                        child: Icon(Icons.edit, size: 18, color: Colors.white),
+                  const SizedBox(height: 10),
+                  Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 60,
+                        backgroundImage:
+                            AssetImage(WMA_profiles.Profile_default),
                       ),
-                    ),
+                      Positioned(
+                        bottom: 0,
+                        right: 4,
+                        child: CircleAvatar(
+                          radius: 18,
+                          backgroundColor: Colors.green,
+                          child: const Icon(Icons.edit,
+                              size: 18, color: Colors.white),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 20),
-                Row() ,
-                  _buildField(
-                    title: 'Email',
-                    child: email == null
-                        ? const CircularProgressIndicator()
-                        : Text(email!, style: const TextStyle(fontSize: 16)),
+                  const SizedBox(height: 30),
+
+                  /// NAME
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      _buildField(
+                        title: 'Name',
+                        child: Text(
+                          name ?? 'Loading...',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    ],
                   ),
+
+                  /// EMAIL
+                  Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      _buildField(
+                        title: 'Email',
+                        child: Text(
+                          email ?? '',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  /// PHONE
                   _buildField(
                     title: 'Phone number (Optional)',
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(
-                          child: phone == null || phone!.isEmpty
-                              ? const Text('Not available', style: TextStyle(color: Colors.grey))
-                              : Text(phone!, style: const TextStyle(fontSize: 16)),
+                        Text(
+                          phone ?? 'Loading.......',
+                          style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.black),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.edit),
+                          icon: const Icon(Icons.edit, color: Colors.black54),
                           onPressed: _editPhoneNumber,
-                        )
+                        ),
                       ],
                     ),
                   ),
                 ],
               ),
             ),
+
+      /// Bottom Nav Bar
+    
     );
   }
 }
