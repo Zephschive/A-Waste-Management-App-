@@ -186,23 +186,41 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ],
                   ),
+                    SizedBox(height: 5,),
+                  Container(
+                          width: ScreenSize.screenWidth(context),
+                          child: Text("Your email would be used as a means to contact you about orders, news and other important information concerning your account.", style: TextStyle(
+                            color: Colors.grey
+                          ),),
+                        ),
 
                   /// PHONE
                   _buildField(
                     title: 'Phone number (Optional)',
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Column(
                       children: [
-                        Text(
-                          phone ?? 'Loading.......',
-                          style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.black),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                            phone!.isEmpty ? "Not Available" :phone ?? 'Loading.......',
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.black),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.black54),
+                              onPressed: _editPhoneNumber,
+                            ),
+                          ],
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.black54),
-                          onPressed: _editPhoneNumber,
-                        ),
+
+                        Container(
+                          width: ScreenSize.screenWidth(context),
+                          child: Text("Your phone number would be used to contact you during deliveries, for enquiries or to deliver urgent information.", style: TextStyle(
+                            color: Colors.grey
+                          ),),
+                        )
                       ],
                     ),
                   ),
