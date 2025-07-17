@@ -51,44 +51,95 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  Future<void> _editPhoneNumber() async {
-    final controller = TextEditingController(text: phone ?? '');
+Future<void> _editPhoneNumber() async {
+  final controller = TextEditingController(text: phone ?? '');
 
-    await showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Update Phone Number'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.phone,
-          decoration: const InputDecoration(hintText: '+233 55 000 0000'),
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) {
+      return Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          left: 20,
+          right: 20,
+          top: 20,
         ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              final newPhone = controller.text.trim();
-              final userEmail = FirebaseAuth.instance.currentUser?.email;
-              if (userEmail != null && newPhone.isNotEmpty) {
-                await FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(userEmail)
-                    .update({'phone': newPhone});
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Update Phone Number',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(
+                hintStyle: TextStyle(color: Colors.black38),
+                labelText: 'Phone Number',
+                hintText: '0557892324',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    final newPhone = controller.text.trim();
+                    final userEmail = FirebaseAuth.instance.currentUser?.email;
 
-                setState(() {
-                  phone = newPhone;
-                });
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
+                    if (userEmail != null && newPhone.isNotEmpty) {
+                      try {
+                        // Find document where email == current user's email
+                        final snapshot = await FirebaseFirestore.instance
+                            .collection('users')
+                            .where('email', isEqualTo: userEmail)
+                            .limit(1)
+                            .get();
+
+                        if (snapshot.docs.isNotEmpty) {
+                          final docId = snapshot.docs.first.id;
+
+                          await FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(docId)
+                              .update({'phone': newPhone});
+
+                          setState(() {
+                            phone = newPhone;
+                          });
+                        }
+                        showSnackbar("Update Successful", Colors.green, Colors.white, context);
+                      } catch (e) {
+                        print("Error updating phone number: $e");
+                      }
+
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      );
+    },
+  );
+}
+
 
   Widget _buildField({required String title, required Widget child}) {
     return Padding(
@@ -108,6 +159,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile', style: TextStyle(color: Colors.black)),
@@ -144,15 +196,22 @@ class _ProfilePageState extends State<ProfilePage> {
                         radius: 60,
                         backgroundImage:
                             AssetImage(WMA_profiles.Profile_default),
+                            
                       ),
                       Positioned(
                         bottom: 0,
                         right: 4,
-                        child: CircleAvatar(
-                          radius: 18,
-                          backgroundColor: Colors.green,
-                          child: const Icon(Icons.edit,
-                              size: 18, color: Colors.white),
+                        child: InkWell(
+                          onTap: () {
+                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Functionality not available at the moment"),backgroundColor: Colors.red, ));
+                        
+                          },
+                          child: CircleAvatar(
+                            radius: 18,
+                            backgroundColor: Colors.green,
+                            child: const Icon(Icons.edit,
+                                size: 18, color: Colors.white),
+                          ),
                         ),
                       ),
                     ],
@@ -203,7 +262,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                            phone!.isEmpty ? "Not Available" :phone ?? 'Loading.......',
+                            phone ==null ? "Not Available" :phone ?? 'Loading.......',
                               style: TextStyle(
                                   fontSize: 16,
                                   color: Colors.black),
