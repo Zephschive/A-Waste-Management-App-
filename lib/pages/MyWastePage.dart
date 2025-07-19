@@ -184,6 +184,12 @@ Stream<DocumentSnapshot<Map<String, dynamic>>> getUserScheduleStream() {
     }
 
     final data = snapshot.data!.data();
+
+     final schedulesRaw = data?['schedules'];
+    if (schedulesRaw == null || schedulesRaw is! List || schedulesRaw.isEmpty) {
+      return const Center(child: Text("No pickup schedule found at the moment."));
+    }
+    
     final scheduleList = (data?['schedules'])
         ?.cast<Map<String, dynamic>>() ?? [];
 

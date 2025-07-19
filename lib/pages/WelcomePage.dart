@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:waste_mangement_app/Common_widgets/common_widgets.dart';
@@ -14,6 +15,8 @@ class WelcomeScreen extends StatefulWidget {
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
 
+  final FirebaseAuth Auth = FirebaseAuth.instance;
+
 
    @override
 void initState() {
@@ -27,26 +30,53 @@ Future<void> _checkIfLoggedIn() async {
   final user = FirebaseAuth.instance.currentUser;
 
   if (user != null) {
-     await Future.delayed(const Duration(seconds: 3));
+    await Future.delayed(const Duration(seconds: 1)); // Optional delay
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => const Center(child: CircularProgressIndicator()),
     );
 
-    // Wait a bit before navigating
-    await Future.delayed(const Duration(seconds: 3));
+    // Fetch user document
+    final querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: user.email)
+          .limit(1)
+          .get();
 
-    // Pop the dialog first
-    Navigator.of(context).pop();
 
-    // Navigate to dashboard
+    if (querySnapshot.docs.isNotEmpty) {
+      final data = querySnapshot.docs.first.data();
+      final keepMe = data["keepMeSignedIn"] ?? false;
+
+      if (keepMe) {
+        // Go to dashboard if keepMeSignedIn is true
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const BottomNavController()),
+        );
+        return;
+      }
+    }
+
+    Navigator.of(context).pop(); // Close the loading dialog
+    await  Auth.signOut();
+      Future.delayed(Duration(seconds: 2));
+          
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => const BottomNavController()),
+      MaterialPageRoute(builder: (_) => const SignInScreen()),
+    );
+  } else {
+    // No user is signed in, go to SignIn screen
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const SignInScreen()),
     );
   }
 }
+
 
      
 

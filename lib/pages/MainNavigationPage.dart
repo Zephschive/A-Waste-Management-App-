@@ -18,7 +18,7 @@ class _BottomNavControllerState extends State<BottomNavController> {
     const Homedashboardpage(),
     const MyWastePage(),
     const ProfilePage(),
-    Center(child: Text('Settings')),
+    const SettingsScreen()
   ];
 
   void _onItemTapped(int index) {

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -14,8 +15,10 @@ class SignInScreen extends StatefulWidget {
 
   bool _obscureText = true;
   bool _isLoading = false;
+  bool _Keepmesignedin = true;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -44,23 +47,47 @@ class _SignInScreenState extends State<SignInScreen> {
 
 
   try {
-      setState(() => _isLoading = true);
-    await _auth.signInWithEmailAndPassword(email: email, password: password);
+     setState(() => _isLoading = true);
+  await _auth.signInWithEmailAndPassword(email: email, password: password);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Login Successful", style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 1),
-      ),
+  // ✅ Save keepMeSignedIn value to Firestore
+  final user = _auth.currentUser;
+  if (user != null) {
+
+ final querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: user.email)
+          .limit(1)
+          .get();
+
+
+          
+    if (querySnapshot.docs.isNotEmpty) {
+      final data = querySnapshot.docs.first;
+      final docid = data.id;
+
+        await _firestore.collection("users").doc(docid).set(
+      {
+        "keepMeSignedIn": _Keepmesignedin,
+      },
+      SetOptions(merge: true), // This avoids overwriting existing fields
     );
+    }
+
   
-    Future.delayed(const Duration(seconds: 1), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const BottomNavController()),
-      );
-    });
+  }
+  
+
+  showSnackbar("Login Successful", Colors.green, Colors.white, context, durationSeconds: 1);
+
+  Future.delayed(const Duration(seconds: 1), () {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const BottomNavController()),
+    );
+  });
+
+
   } on FirebaseAuthException catch (e) {
     String message = 'Sign in failed';
     if (e.code == 'user-not-found') {
@@ -148,6 +175,19 @@ class _SignInScreenState extends State<SignInScreen> {
                               const SizedBox(height: 16),
                               CustomTextField(controller: _passwordController, hint: "Enter your passoword", isPassword: true,),
                               const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Checkbox(value: _Keepmesignedin, onChanged:(value) {
+                                    setState(() {
+                                    _Keepmesignedin = value ?? false;
+                                      });
+                                  },),
+                                  SizedBox(width: 2,),
+                                Text("Keep me signed in", style: TextStyle(color: Colors.white),)
+                                  ,
+                                ],
+                              ),
+                              SizedBox(height: 3,),
                               // Forgot Password
                               Align(
                                 alignment: Alignment.centerLeft,

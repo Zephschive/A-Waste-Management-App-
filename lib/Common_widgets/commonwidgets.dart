@@ -434,6 +434,21 @@ class _CustomTextFieldState extends State<CustomTextField> {
 
 
 
-  void showSnackbar(String message, Color BackgroundColor, Color TextColor ,BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message,style: TextStyle(color: TextColor),  ) ,backgroundColor:BackgroundColor , ));
-  }
+ void showSnackbar(
+  String message,
+  Color backgroundColor,
+  Color textColor,
+  BuildContext context, {
+  int durationSeconds = 3, 
+}) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        message,
+        style: TextStyle(color: textColor),
+      ),
+      backgroundColor: backgroundColor,
+      duration: Duration(seconds: durationSeconds),
+    ),
+  );
+}
