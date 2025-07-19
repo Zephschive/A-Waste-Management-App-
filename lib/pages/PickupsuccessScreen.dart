@@ -47,7 +47,7 @@ class PickupSuccessScreen extends StatelessWidget {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               elevation: 2,
               child: ListTile(
-                leading: CircleAvatar(backgroundImage: AssetImage(profileImage), radius: 24),
+                leading: CircleAvatar(child: Text(collectorName[0])),
                 title: Text(collectorName, style: const TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: Row(
                   children: List.generate(5, (index) {

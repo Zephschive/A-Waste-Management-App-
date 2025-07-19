@@ -15,3 +15,4 @@ export 'package:waste_mangement_app/pages/MyWastePage.dart';
 export 'Notificationspage.dart';
 export 'ProfilePage.dart';
 export 'Settings.dart';
+export 'package:waste_mangement_app/db/db.dart';

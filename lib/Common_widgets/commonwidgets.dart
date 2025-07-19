@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:waste_mangement_app/Common_widgets/common_widgets.dart';
 
@@ -7,7 +9,7 @@ Widget greetingSection(String name, String imagePath) {
     children: [
       CircleAvatar(radius: 30, backgroundImage: AssetImage(imagePath), backgroundColor: Colors.transparent,),
       const SizedBox(width: 10),
-      Text('Hi $name', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+      Text(' $name', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
     ],
   );
 }
@@ -74,14 +76,76 @@ Widget nextPickupCard(BuildContext context) {
 
 
 Widget collectorsList() {
-  // You can extract this into a ListView.builder if the data is dynamic.
-  return Column(
-    children: const [
-      CollectorTile(name: 'Jack Obeng', distance: '2.4 km', status: 'Available', stars: 4),
-      CollectorTile(name: 'Robert Mawuli Senyo', distance: '1.1 km', status: 'Busy', stars: 3),
-    ],
+  final currentUserEmail = FirebaseAuth.instance.currentUser?.email;
+
+  if (currentUserEmail == null) {
+    return const Center(child: Text("Not signed in."));
+  }
+
+  return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+    future: FirebaseFirestore.instance
+        .collection('users')
+        .where('email', isEqualTo: currentUserEmail)
+        .limit(1)
+        .get()
+        .then((query) => query.docs.first),
+    builder: (context, userSnapshot) {
+      if (userSnapshot.connectionState == ConnectionState.waiting) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
+        return const Center(child: Text("User not found."));
+      }
+
+      final userOrg = userSnapshot.data!.data()?['organization'];
+      if (userOrg == null) {
+        return const Center(child: Text("No organization assigned."));
+      }
+
+      // Now that we have user's organization, fetch collectors
+      return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: FirebaseFirestore.instance
+            .collection('waste_collectors')
+            .where('organization', isEqualTo: userOrg)
+            .limit(3)
+            .snapshots(),
+        builder: (context, collectorSnapshot) {
+          if (collectorSnapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (!collectorSnapshot.hasData || collectorSnapshot.data!.docs.isEmpty) {
+            return const Center(child: Text("No collectors found for your organization."));
+          }
+
+          final collectors = collectorSnapshot.data!.docs;
+
+          return ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: collectors.length,
+            itemBuilder: (context, index) {
+              final data = collectors[index].data();
+              final name = data['name'] ?? 'Unknown';
+              final status = data['availability'] ?? 'Unknown';
+              final stars = (data['rating'] ?? 0).toDouble();
+              final distance = 'N/A'; // Optional: replace with real distance
+
+              return CollectorTile(
+                name: name,
+                status: status,
+                distance: distance,
+                stars: stars.round(),
+              );
+            },
+          );
+        },
+      );
+    },
   );
 }
+
 
 Widget recentPickupList() {
   return ListView.builder(

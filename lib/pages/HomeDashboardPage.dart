@@ -69,7 +69,7 @@ class _HomedashboardpageState extends State<Homedashboardpage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _isLoading  ?CircularProgressIndicator() : greetingSection(_firstName ?? 'Loading...........', WMA_profiles.Profile_default),
+              _isLoading  ?CircularProgressIndicator() : greetingSection(_firstName==null? "Name Not Available"  :    _firstName != null  ?"Hi $_firstName"  : 'Loading...........', WMA_profiles.Profile_default),
               const SizedBox(height: 20),
               nextPickupCard(context),
               const SizedBox(height: 20),

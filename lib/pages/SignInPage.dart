@@ -1,5 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:waste_mangement_app/Common_widgets/common_widgets.dart';
@@ -17,8 +17,7 @@ class SignInScreen extends StatefulWidget {
   bool _isLoading = false;
   bool _Keepmesignedin = true;
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -48,13 +47,13 @@ class _SignInScreenState extends State<SignInScreen> {
 
   try {
      setState(() => _isLoading = true);
-  await _auth.signInWithEmailAndPassword(email: email, password: password);
+  await auth.signInWithEmailAndPassword(email: email, password: password);
 
   // ✅ Save keepMeSignedIn value to Firestore
-  final user = _auth.currentUser;
+  final user = auth.currentUser;
   if (user != null) {
 
- final querySnapshot = await FirebaseFirestore.instance
+ final querySnapshot = await firestore
           .collection('users')
           .where('email', isEqualTo: user.email)
           .limit(1)
@@ -66,7 +65,7 @@ class _SignInScreenState extends State<SignInScreen> {
       final data = querySnapshot.docs.first;
       final docid = data.id;
 
-        await _firestore.collection("users").doc(docid).set(
+        await firestore.collection("users").doc(docid).set(
       {
         "keepMeSignedIn": _Keepmesignedin,
       },

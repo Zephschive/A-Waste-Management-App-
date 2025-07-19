@@ -37,124 +37,203 @@ class _RequestPickupScreenState extends State<RequestPickupScreen> {
   );
 }
 
+/// Looks up the Firestore document ID for the currently signed‐in user
+Future<String> _getCurrentUserDocId() async {
+  final userEmail = auth.currentUser?.email;
+  if (userEmail == null) throw Exception('No user logged in');
+
+  final snapshot = await firestore
+    .collection('users')
+    .where('email', isEqualTo: userEmail)
+    .limit(1)
+    .get();
+
+  if (snapshot.docs.isEmpty) {
+    throw Exception('User document not found');
+  }
+  return snapshot.docs.first.id;
+}
+
+Future<List<QueryDocumentSnapshot>> _fetchAvailableCollectors({int limit = 3}) async {
+  // 1) Find user doc
+  final userDocId = await _getCurrentUserDocId();
+  final userDoc = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(userDocId)
+      .get();
+  final org = userDoc.data()?['organization'] as String?;
+  if (org == null) throw Exception('User has no organization set');
+
+  // 2) Query waste_collectors by that organization
+  final collectorSnap = await FirebaseFirestore.instance
+      .collection('waste_collectors')
+      .where('organization', isEqualTo: org)
+      .limit(limit)
+      .get();
+
+  return collectorSnap.docs;
+}
 
 
-  void showWasteCollectorSheet(BuildContext context, String paymentMethod) {
-  String? selectedCollector;
+Future<void> _requestPickupAndGo(String collectorId) async {
+  // 1) Show a blocking loading dialog
+  _showLoadingDialog(context);
 
+  try {
+    // 2) Fetch the collector's document
+    final collectorSnap = await FirebaseFirestore.instance
+      .collection('waste_collectors')
+      .doc(collectorId)
+      .get();
+
+    if (!collectorSnap.exists) {
+      throw StateError("Collector not found");
+    }
+
+    final c = collectorSnap.data()!;
+    final collectorName  = c['name']         as String;
+    final availability   = c['availability'] as String;
+    final isAvailable    = availability == 'Available';
+    final rating         = (c['rating'] as num).toInt();
+    final profileImage   = c['profileImage'] as String? ?? '';
+    final distance       = c['distance']     as String? ?? '';
+    final paymentMethod  = _selectedPaymentMethod!; // assume non-null
+
+    // 3) Build your request object
+    final request = {
+      'collectorId':    collectorId,
+      'collectorName':  collectorName,
+   
+      'rating':         rating,
+      'isAvailable':    isAvailable,
+      'paymentMethod':  paymentMethod,
+      'location':       _selectedLocation,
+      'requestedAt': DateTime.now().toUtc().toIso8601String(),
+    };
+
+    // 4) Find & update the user's doc
+    final userDocId = await _getCurrentUserDocId();
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userDocId)
+        .update({
+          'pickups': FieldValue.arrayUnion([request])
+        });
+
+    // 5) Dismiss loading
+    if (mounted) Navigator.of(context).pop();
+
+    // 6) Navigate to your success screen with all real data
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => PickupSuccessScreen(
+        collectorName: collectorName,
+        distance: distance,
+        rating: rating,
+        isAvailable: isAvailable,
+        profileImage: profileImage,
+      ),
+    ));
+  } catch (e) {
+    // Dismiss loading on error
+    if (mounted) Navigator.of(context).pop();
+    showSnackbar("Error: ${e.toString()}", Colors.red, Colors.white, context);
+  }
+}
+
+
+void showWasteCollectorSheet() {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (context) {
-      return StatefulBuilder(
-        builder: (context, setModalState) {
-          return Container(
-            child: Container(
-                 padding: const EdgeInsets.only(top: 8),
-                decoration: const BoxDecoration(
-                  color: WMA_Colours.greenPrimary,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-                ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                   Text(
-                      "15% discount apply on this request",
-                      style: TextStyle(color: Colors.white,fontWeight: FontWeight.w600),
-                    ),
-
-                     const SizedBox(height: 10,),
-                    Container(
-                padding: const EdgeInsets.all(20),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius:BorderRadius.vertical(top: Radius.circular(25)),
-                ),
-                child:Column(
-                      children: [
-                        Container(
-                      width: 60,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: 24),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-
-                    
-                  const SizedBox(height: 16),
-                  Text("Your waste collector", style: Theme.of(context).textTheme.titleMedium),
-              
-                  const SizedBox(height: 12),
-                  collectorTile(
-                    name: "Kwaku Kwarteng",
-                    distance: "0.2 km away",
-                    selected: selectedCollector == "Kwaku",
-                    onTap: () => setModalState(() => selectedCollector = "Kwaku"),
-                    ProfileImage: WMA_profiles.Profile_2
-                  ),
-                  collectorTile(
-                    name: "Jack Obeng",
-                    distance: "2.4 km away",
-                    selected: selectedCollector == "Jack",
-                    onTap: () => setModalState(() => selectedCollector = "Jack"),
-                      ProfileImage: WMA_profiles.Profile_4
-                  ),
-              
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      style: ButtonStyle(
-                         shape: WidgetStatePropertyAll(BeveledRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(3))))
-                      ),
-                      onPressed: selectedCollector == null
-    ? null
-    : ()async {
-     // close sheet
-
-      
-      _showLoadingDialog(context);
-
-      // 2) Small delay to let the dialog render (optional)
-      await Future.delayed(const Duration(seconds: 4));
-
-     
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => PickupSuccessScreen(
-              collectorName: selectedCollector!,
-              distance: selectedCollector == "Kwaku" ? "0.2 km away" : "2.4 km away",
-              rating: 4,
-              isAvailable: true,
-              profileImage: WMA_profiles.Profile_4,
-            ),
+    backgroundColor: Colors.white,
+  
+    builder: (sheetCtx) {
+      return SafeArea(
+        child: Container(
+          // wrap to allow sheet to expand
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(sheetCtx).viewInsets.bottom,
           ),
-        );
-      },
+          child: FutureBuilder<List<QueryDocumentSnapshot>>(
+            future: _fetchAvailableCollectors(limit: 3),
+            builder: (context, snap) {
+              if (snap.connectionState == ConnectionState.waiting) {
+                return const SizedBox(
+                  height: 200,
+                  child: Center(child: CircularProgressIndicator( )),
+                );
+              }
+              if (snap.hasError || !snap.hasData || snap.data!.isEmpty) {
+                return SizedBox(
+                  height: 200,
+                  child: Center(child: Text("No collectors found.")),
+                );
+              }
 
-                      child: const Text("Done"),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
+              var collectors = snap.data!;
+              String? selectedId;
 
-                      ],
-                ) ,
-                ),
-                  
-              
-                ],
-              ),
-            ),
-          );
-        },
+              return StatefulBuilder(
+                builder: (context, setModalState) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                            SizedBox(height: 20,),
+                      Align(
+                        alignment: Alignment.center,
+                        child: Text("Your waste collector", style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700
+                        ),),
+                      ),
+                      // … you can inject your green banner here …
+                      for (var doc in collectors)
+                        ListTile(
+                          title: Text(doc['name']),
+                          subtitle: Text("${doc['availability']} • ${doc['rating']}★"),
+                          leading: CircleAvatar(child: Text(doc['name'][0])),
+                          selected: selectedId == doc.id,
+                          onTap: () => setModalState(() => selectedId = doc.id),
+                        ),
+Padding(
+  padding: const EdgeInsets.all(16.0), // wider padding for space
+  child: SizedBox(
+    width: double.infinity, // full-width
+    height: 56, // taller button
+    child: FilledButton(
+      style: FilledButton.styleFrom(
+        backgroundColor: Colors.green, // optional, match your app’s color
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12), // slightly rounded edges
+        ),
+        textStyle: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      onPressed: selectedId == null
+          ? null
+          : () {
+              Navigator.pop(sheetCtx);
+              _requestPickupAndGo(selectedId!);
+            },
+      child: const Text("Done"),
+    ),
+  ),
+)
+,
+                    ],
+                  );
+                },
+              );
+            },
+          ),
+        ),
       );
     },
   );
 }
+
 
 
 
@@ -271,7 +350,7 @@ DropdownButtonFormField<String>(
     ? null
     : () {
         Navigator.pop(context);
-        showWasteCollectorSheet(context,  _selectedPaymentMethod!);
+        showWasteCollectorSheet();
       },
 
                         style: FilledButton.styleFrom(
