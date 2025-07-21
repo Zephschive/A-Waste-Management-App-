@@ -1,7 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:flutter/material.dart';
 import 'package:waste_mangement_app/Common_widgets/common_widgets.dart';
+
+import '../pages/pages_Ext.dart';
 
 
 Widget greetingSection(String name, String imagePath) {
@@ -148,87 +149,169 @@ Widget collectorsList() {
 
 
 Widget recentPickupList() {
-  return ListView.builder(
-    shrinkWrap: true,
-    physics: const AlwaysScrollableScrollPhysics(),
-    itemCount: 3,
-    itemBuilder: (context, index) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Column(
-          
-          children: [
-            // Left: Calendar icon and date
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                Row(
+  Future<String> _getCurrentUserDocId() async {
+    final userEmail = FirebaseAuth.instance.currentUser?.email;
+    if (userEmail == null) throw Exception('No user logged in');
 
+    final snapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('email', isEqualTo: userEmail)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isEmpty) {
+      throw Exception('User document not found');
+    }
+
+    return snapshot.docs.first.id;
+  }
+
+  return FutureBuilder<String>(
+    future: _getCurrentUserDocId(),
+    builder: (context, idSnapshot) {
+      if (idSnapshot.connectionState == ConnectionState.waiting) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      if (!idSnapshot.hasData || idSnapshot.hasError) {
+        return const Center(child: Text("Failed to load recent pickups."));
+      }
+
+      final userDocId = idSnapshot.data!;
+
+      return FutureBuilder<DocumentSnapshot>(
+        future: FirebaseFirestore.instance
+            .collection('users')
+            .doc(userDocId)
+            .get(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            return const Center(child: Text("No recent pickups."));
+          }
+
+          final data = snapshot.data!.data() as Map<String, dynamic>;
+          List<Map<String, dynamic>> pickups =
+              List<Map<String, dynamic>>.from(data['pickups'] ?? []);
+
+          // Sort by requestedAt in descending order
+          pickups.sort((a, b) {
+            final aTime =
+                DateTime.tryParse(a['requestedAt'] ?? '') ?? DateTime(0);
+            final bTime =
+                DateTime.tryParse(b['requestedAt'] ?? '') ?? DateTime(0);
+            return bTime.compareTo(aTime);
+          });
+
+          final recentPickups = pickups.take(3).toList();
+
+          if (recentPickups.isEmpty) {
+            return const Center(child: Text("No recent pickups."));
+          }
+
+          return ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: recentPickups.length,
+            itemBuilder: (context, index) {
+              final pickup = recentPickups[index];
+
+              final dateTime =
+                  DateTime.tryParse(pickup['requestedAt'] ?? '');
+              final dateStr = dateTime != null
+                  ? "${dateTime.day}/${dateTime.month}/${dateTime.year}"
+                  : "Unknown date";
+              final timeStr = dateTime != null
+                  ? TimeOfDay.fromDateTime(dateTime).format(context)
+                  : "Unknown time";
+
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Column(
                   children: [
-                    SizedBox(width: 10,),
-                    Icon(Icons.calendar_today, size: 16, color: Colors.grey),
-                    SizedBox(width: 10,),
-                    Text('22nd August, 2023',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.black45,
-                        fontWeight: FontWeight.w400,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const SizedBox(width: 10),
+                            const Icon(Icons.calendar_today,
+                                size: 16, color: Colors.grey),
+                            const SizedBox(width: 10),
+                            Text(
+                              dateStr,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Colors.black45,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            const Icon(Icons.access_time,
+                                size: 14, color: Colors.grey),
+                            const SizedBox(width: 4),
+                            Text(
+                              timeStr,
+                              style: const TextStyle(
+                                  fontSize: 12, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 20,
+                              backgroundImage: pickup['profileImage'] != null &&
+                                      pickup['profileImage'] != ''
+                                  ? NetworkImage(pickup['profileImage'])
+                                  : const AssetImage(
+                                      WMA_profiles.Profile_2,
+                                    ) as ImageProvider,
+                              backgroundColor: Colors.transparent,
+                            ),
+                            const SizedBox(width: 7),
+                            Text(
+                              pickup['collectorName'] ?? 'Unknown',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          "GHS ${pickup['amount'] ?? '0.00'}",
+                          style: const TextStyle(
+                            color: Colors.black45,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-                 Row(
-                   children: [
-                     Icon(Icons.access_time, size: 14, color: Colors.grey),
-                     SizedBox(width: 4),
-                     Text('10:00 am',
-                       style: TextStyle(fontSize: 12, color: Colors.grey),
-                     ),
-                   ],
-                 ),
-              ],
-            ),
-         
-
-      const SizedBox(height: 10,),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundImage: AssetImage(WMA_profiles.Profile_2),
-                      backgroundColor: Colors.transparent,
-                    ),
-                    SizedBox(width: 7),
-                    Text('Joseph Amatey',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-
-                Row(
-                  children: [Text('GHS 24.00',
-                  style: TextStyle(
-                  color: Colors.black45,
-                    fontSize: 16,
-                  ),
-                )],
-                )
-              ],
-            ),
-
-      
-          ],
-        ),
+              );
+            },
+          );
+        },
       );
     },
   );
 }
+
+
 
 
 

@@ -103,7 +103,6 @@ Future<void> _requestPickupAndGo(String collectorId) async {
     final request = {
       'collectorId':    collectorId,
       'collectorName':  collectorName,
-   
       'rating':         rating,
       'isAvailable':    isAvailable,
       'paymentMethod':  paymentMethod,
