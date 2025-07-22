@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:waste_mangement_app/Common_widgets/common_widgets.dart';
 
 import '../pages/pages_Ext.dart';
+import 'dart:math';
+
 
 
 Widget greetingSection(String name, String imagePath) {
@@ -20,58 +22,129 @@ Widget greetingSection(String name, String imagePath) {
   }
 
 Widget nextPickupCard(BuildContext context) {
-  return GestureDetector(
-    onTap: () {
-      // Navigator.push(
-      //   context,
-      //   MaterialPageRoute(builder: (context) => const SchedulePage()), // ← Create this screen
-      // );
-    },
-    child: Container(
-      decoration: BoxDecoration(
-        image: const DecorationImage(
-          image: AssetImage(WMA_Images.OrangeMan_Background),
-          fit: BoxFit.cover,
-        ),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Your next pickup', style: TextStyle(color: Colors.white)),
-          const Text(
-            '22nd August, 2023',
-            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+  Future<Map<String, dynamic>?> _fetchNextPickup() async {
+    final userEmail = FirebaseAuth.instance.currentUser?.email;
+    if (userEmail == null) return null;
+
+    // First: Get the user doc ID by querying by email
+    final userSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('email', isEqualTo: userEmail)
+        .limit(1)
+        .get();
+
+    if (userSnapshot.docs.isEmpty) return null;
+
+    final docId = userSnapshot.docs.first.id;
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(docId).get();
+
+    if (!userDoc.exists) return null;
+
+    final data = userDoc.data() as Map<String, dynamic>;
+    List<Map<String, dynamic>> pickups =
+        List<Map<String, dynamic>>.from(data['pickups'] ?? []);
+
+    if (pickups.isEmpty) return null;
+
+    // Get the last pickup as the 'next pickup'
+    final nextPickup = pickups.last;
+    return nextPickup;
+  }
+
+  Color getRandomColor() {
+  final random = Random();
+  return Color.fromARGB(
+    255, // full opacity
+    random.nextInt(256),
+    random.nextInt(256),
+    random.nextInt(256),
+  );
+}
+
+
+  return FutureBuilder<Map<String, dynamic>?>(
+    future: _fetchNextPickup(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      final pickup = snapshot.data;
+
+      if (pickup == null) {
+        return const Center(child: Text("No upcoming pickups."));
+      }
+
+      final dateTime = DateTime.tryParse(pickup['requestedAt'] ?? '');
+      final dateStr = dateTime != null
+          ? "${dateTime.day}/${dateTime.month}/${dateTime.year}"
+          : "Unknown Date";
+
+      final collectorName = pickup['collectorName'] ?? "Unknown";
+      final collectorImage = pickup['profileImage'];
+
+      return GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const MyWastePage()),
+          );
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            image: const DecorationImage(
+              image: AssetImage(WMA_Images.OrangeMan_Background),
+              fit: BoxFit.cover,
+            ),
+            borderRadius: BorderRadius.circular(12),
           ),
-          const SizedBox(height: 8),
-          const Text('Your current waste collector', style: TextStyle(color: Colors.white70)),
-          const SizedBox(height: 5),
-          const Row(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                backgroundImage: AssetImage(WMA_profiles.Profile_2),
-                backgroundColor: Colors.transparent,
-              ),
-              SizedBox(width: 10),
-              Text('Joseph Amatey', style: TextStyle(color: Colors.white)),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: const [
+              const Text('Your next pickup',
+                  style: TextStyle(color: Colors.white)),
               Text(
-                'See your schedule',
-                style: TextStyle(color: Colors.white70, fontSize: 12),
+                dateStr,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold),
               ),
-              SizedBox(width: 4),
-              Icon(Icons.arrow_forward, color: Colors.white70, size: 14),
+              const SizedBox(height: 8),
+              const Text('Your waste collector',
+                  style: TextStyle(color: Colors.white70)),
+              const SizedBox(height: 5),
+              Row(
+                children: [
+                  CircleAvatar(
+                  child: Text(collectorName[0]),
+                    backgroundColor: getRandomColor(),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(collectorName,
+                      style: const TextStyle(color: Colors.white)),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: const [
+                  Text(
+                    'See your schedule',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                  SizedBox(width: 4),
+                  Icon(Icons.arrow_forward,
+                      color: Colors.white70, size: 14),
+                ],
+              ),
             ],
           ),
-        ],
-      ),
-    ),
+        ),
+      );
+    },
   );
 }
 
