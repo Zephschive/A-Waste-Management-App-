@@ -1,16 +1,25 @@
 
 import 'package:flutter/material.dart';
 import 'package:waste_mangement_app/Common_widgets/common_widgets.dart';
-
 import '../pages/pages_Ext.dart';
 import 'dart:math';
 
 
 
 Widget greetingSection(String name, String imagePath) {
+
+  Color getRandomColor() {
+  final random = Random();
+  return Color.fromARGB(
+    255, // full opacity
+    random.nextInt(256),
+    random.nextInt(256),
+    random.nextInt(256),
+  );
+}
   return Row(
     children: [
-      CircleAvatar(radius: 30, backgroundImage: AssetImage(imagePath), backgroundColor: Colors.transparent,),
+      CircleAvatar(radius: 30, child: Text(name[3], style: TextStyle(fontSize: 25),), backgroundColor: getRandomColor(),),
       const SizedBox(width: 10),
       Text(' $name', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
     ],
@@ -43,7 +52,7 @@ Widget nextPickupCard(BuildContext context) {
 
     final data = userDoc.data() as Map<String, dynamic>;
     List<Map<String, dynamic>> pickups =
-        List<Map<String, dynamic>>.from(data['pickups'] ?? []);
+        List<Map<String, dynamic>>.from(data['pickupss'] ?? []);
 
     if (pickups.isEmpty) return null;
 
@@ -73,7 +82,43 @@ Widget nextPickupCard(BuildContext context) {
       final pickup = snapshot.data;
 
       if (pickup == null) {
-        return const Center(child: Text("No upcoming pickups."));
+        return  Container(
+          decoration: BoxDecoration(
+            image: const DecorationImage(
+              image: AssetImage(WMA_Images.OrangeMan_Background),
+              fit: BoxFit.cover,
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+
+            SizedBox(height: 50,),
+            Center(child: Text("No upcoming pickups." ,style: TextStyle(color: Colors.white),),),
+              const SizedBox(height: 10),
+                SizedBox(height: 20,),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_)=>PickupHistoryPage()));
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'See your schedule',
+                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                    SizedBox(width: 4),
+                    Icon(Icons.arrow_forward,
+                        color: Colors.white70, size: 14),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
       }
 
       final dateTime = DateTime.tryParse(pickup['requestedAt'] ?? '');
@@ -103,6 +148,8 @@ Widget nextPickupCard(BuildContext context) {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+
+              
               const Text('Your next pickup',
                   style: TextStyle(color: Colors.white)),
               Text(
@@ -670,5 +717,188 @@ class _CustomTextFieldState extends State<CustomTextField> {
       backgroundColor: backgroundColor,
       duration: Duration(seconds: durationSeconds),
     ),
+  );
+}
+
+
+
+
+
+Widget nextSchedulePickupCard(BuildContext context) {
+  Future<Map<String, dynamic>?> _fetchScheduleNextPickup() async {
+    final userEmail = FirebaseAuth.instance.currentUser?.email;
+    if (userEmail == null) return null;
+
+    // First: Get the user doc ID by querying by email
+    final userSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('email', isEqualTo: userEmail)
+        .limit(1)
+        .get();
+
+    if (userSnapshot.docs.isEmpty) return null;
+
+    final docId = userSnapshot.docs.first.id;
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(docId).get();
+
+    if (!userDoc.exists) return null;
+
+    final data = userDoc.data() as Map<String, dynamic>;
+    List<Map<String, dynamic>> schedule =
+        List<Map<String, dynamic>>.from(data['schedule'] ?? []);
+
+    if (schedule.isEmpty) return null;
+
+    // Get the last pickup as the 'next pickup'
+    final nextPickup = schedule.last;
+    return nextPickup;
+  }
+
+  Color getRandomColor() {
+  final random = Random();
+  return Color.fromARGB(
+    255, // full opacity
+    random.nextInt(256),
+    random.nextInt(256),
+    random.nextInt(256),
+  );
+}
+
+   
+
+
+  return FutureBuilder<Map<String, dynamic>?>(
+    future: _fetchScheduleNextPickup(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      final schedule = snapshot.data;
+
+      if (schedule == null) {
+        return  Container(
+              height: 170,
+              decoration: BoxDecoration(
+                
+                image: const DecorationImage(
+                  image: AssetImage(WMA_Images.YellowDump_Background), // Replace with your background image
+                  fit: BoxFit.cover,
+                  colorFilter: ColorFilter.matrix(<double>[
+  0.6, 0,   0,   0, 0, // Red – 60% intensity
+  0,   0.7, 0,   0, 0, // Green – 70% intensity
+  0,   0,   1.2, 0, 0, // Blue – boosted to 120%
+  0,   0,   0,   1, 0, // Alpha
+]),
+
+
+                
+                ),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              padding: const EdgeInsets.all(16),
+              alignment: Alignment.bottomLeft,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Center(child: Text("No Pickup Schedule found at the moment"),),
+                     const SizedBox(height: 5),
+                  
+                ],
+              ),
+            );
+      }
+
+      final dateTime = DateTime.tryParse(schedule['requestedAt'] ?? '');
+      final dateStr = dateTime != null
+          ? "${dateTime.day}/${dateTime.month}/${dateTime.year}"
+          : "Unknown Date";
+
+      final collectorName = schedule['collectorName'] ?? "Unknown";
+      final collectorImage =schedule['profileImage'];
+
+      return GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const MyWastePage()),
+          );
+        },
+        child: Container(
+              height: 170,
+              decoration: BoxDecoration(
+                
+                image: const DecorationImage(
+                  image: AssetImage(WMA_Images.YellowDump_Background), // Replace with your background image
+                  fit: BoxFit.cover,
+                  colorFilter: ColorFilter.matrix(<double>[
+  0.6, 0,   0,   0, 0, // Red – 60% intensity
+  0,   0.7, 0,   0, 0, // Green – 70% intensity
+  0,   0,   1.2, 0, 0, // Blue – boosted to 120%
+  0,   0,   0,   1, 0, // Alpha
+]),
+
+
+                
+                ),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              padding: const EdgeInsets.all(16),
+              alignment: Alignment.bottomLeft,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Your next pickup',
+                    style: TextStyle(color: Colors.white, fontSize: 14),
+                  ),
+                  const SizedBox(height: 4),
+                   Text(
+                    dateStr,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Divider( color: Colors.white,  thickness:0.2 ,),
+                  const SizedBox(height: 5),
+                  Row(
+                    children: [
+                      const Text(
+                        'Your current waste collector',
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                      const Spacer(),
+                      
+                    ],
+                  ),
+                     const SizedBox(height: 5),
+                  Row(
+                    children: [
+                      const CircleAvatar(
+                        radius: 14,
+                        backgroundImage: AssetImage(WMA_profiles.Profile_3), // Replace with actual image
+                      ),
+
+                      Container(
+                      width: 140,
+                        padding: EdgeInsets.only(left: 15),
+                        child: const Text(
+                          'Joseph Amatey',
+                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900),
+                        ),
+                      ),
+                    ],
+                  )
+                ],
+              ),
+            ),
+      );
+    },
   );
 }
