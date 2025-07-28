@@ -21,7 +21,9 @@ class _HomedashboardpageState extends State<Homedashboardpage> {
   @override
   void initState() {
     super.initState();
-    _loadUserName();
+    Future.delayed(Duration(seconds: 2), (){
+      _loadUserName();
+    });
   }
 
 
@@ -69,7 +71,13 @@ class _HomedashboardpageState extends State<Homedashboardpage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _isLoading  ?CircularProgressIndicator() : greetingSection(_firstName==null? "Name Not Available"  :    _firstName != null  ?"Hi $_firstName"  : 'Loading...........', WMA_profiles.Profile_default),
+              _isLoading
+  ? greetingSection(null, null) 
+  : greetingSection(
+      _firstName?.isNotEmpty == true ? "Hi $_firstName" : "Name Not Available",
+      WMA_profiles.Profile_default,
+    )
+,
               const SizedBox(height: 20),
               nextPickupCard(context),
               const SizedBox(height: 20),

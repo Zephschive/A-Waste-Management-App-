@@ -43,7 +43,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _buildTile(
                 icon: Icons.person_outline,
                 text: 'Account management',
-                onTap: () {},
+                onTap: () {
+                  showSnackbar("Functionaltiy not available at the moment", Colors.red, Colors.white, context);
+                },
               ),
             ],
           ),
@@ -54,17 +56,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _buildTile(
                 icon: Icons.notifications_outlined,
                 text: 'Push notifications',
-                onTap: () {},
+                onTap: () {
+                      showSnackbar("Functionaltiy not available at the moment", Colors.red, Colors.white, context);
+                },
               ),
               _buildTile(
                 icon: Icons.language,
                 text: 'Language',
-                onTap: () {},
+                onTap: () {
+                      showSnackbar("Functionaltiy not available at the moment", Colors.red, Colors.white, context);
+                },
               ),
               _buildTile(
                 icon: Icons.accessibility_new,
                 text: 'Accessibility',
-                onTap: () {},
+                onTap: () {
+                      showSnackbar("Functionaltiy not available at the moment", Colors.red, Colors.white, context);
+                },
               ),
             ],
           ),
@@ -75,12 +83,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _buildTile(
                 icon: Icons.report_problem_outlined,
                 text: 'Report a problem',
-                onTap: () {},
+                onTap: () {
+                      showSnackbar("Functionaltiy not available at the moment", Colors.red, Colors.white, context);
+                },
               ),
               _buildTile(
                 icon: Icons.help_outline,
                 text: 'Help',
-                onTap: () {},
+                onTap: () {
+                      showSnackbar("Functionaltiy not available at the moment", Colors.red, Colors.white, context);
+                },
               ),
             ],
           ),

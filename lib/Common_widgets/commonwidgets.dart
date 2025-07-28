@@ -3,28 +3,70 @@ import 'package:flutter/material.dart';
 import 'package:waste_mangement_app/Common_widgets/common_widgets.dart';
 import '../pages/pages_Ext.dart';
 import 'dart:math';
+import 'package:shimmer/shimmer.dart';
 
 
+import 'package:flutter/material.dart';
+import 'dart:math';
+import 'package:shimmer/shimmer.dart';
 
-Widget greetingSection(String name, String imagePath) {
+Widget greetingSection(String? name, String? imagePath) {
+  bool isLoading = name == null || name.isEmpty;
 
   Color getRandomColor() {
-  final random = Random();
-  return Color.fromARGB(
-    255, // full opacity
-    random.nextInt(256),
-    random.nextInt(256),
-    random.nextInt(256),
-  );
-}
+    final random = Random();
+    return Color.fromARGB(
+      255,
+      random.nextInt(256),
+      random.nextInt(256),
+      random.nextInt(256),
+    );
+  }
+
+  if (isLoading) {
+    return Row(
+      children: [
+        Shimmer.fromColors(
+          baseColor: Colors.grey[400]!,
+          highlightColor: Colors.grey[100]!,
+          child: const CircleAvatar(
+            radius: 30,
+            backgroundColor: Colors.white,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Shimmer.fromColors(
+          baseColor: Colors.grey[400]!,
+          highlightColor: Colors.grey[100]!,
+          child: Container(
+            height: 24,
+            width: 150,
+            color: Colors.white,
+          ),
+        ),
+      ],
+    );
+  }
+
   return Row(
     children: [
-      CircleAvatar(radius: 30, child: Text(name[3], style: TextStyle(fontSize: 25),), backgroundColor: getRandomColor(),),
+      CircleAvatar(
+        radius: 30,
+        backgroundColor: getRandomColor(),
+        child: Text(
+          name.length > 3 ? name[3].toUpperCase() : name[0].toUpperCase(),
+          style: const TextStyle(fontSize: 25),
+        ),
+      ),
       const SizedBox(width: 10),
-      Text(' $name', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+      Text(
+        ' $name',
+        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+      ),
     ],
   );
 }
+
 
   Widget sectionTitle(BuildContext context, String title) {
     return Text(title, style: Theme.of(context).textTheme.titleMedium);
@@ -412,7 +454,7 @@ Widget recentPickupList() {
                           ],
                         ),
                         Text(
-                          "GHS ${pickup['amount'] ?? '0.00'}",
+                          "Paid by ${pickup['paymentMethod'] ?? 'Not available'}",
                           style: const TextStyle(
                             color: Colors.black45,
                             fontSize: 16,
@@ -800,10 +842,12 @@ Widget nextSchedulePickupCard(BuildContext context) {
               padding: const EdgeInsets.all(16),
               alignment: Alignment.bottomLeft,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.start,
+                
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Center(child: Text("No Pickup Schedule found at the moment"),),
+                  Container(
+                   
+                    child: Center(child: Text("No Pickup Schedule found at the moment", style: TextStyle(color: Colors.white),),)),
                      const SizedBox(height: 5),
                   
                 ],
