@@ -29,7 +29,42 @@ Stream<DocumentSnapshot<Map<String, dynamic>>> getUserScheduleStream() {
       .map((querySnapshot) => querySnapshot.docs.first);
 }
 
+  Future<void> deleteScheduleAtIndex(BuildContext context, int index) async {
+  final userEmail = FirebaseAuth.instance.currentUser?.email;
+  if (userEmail == null) return;
+try{
+final userSnapshot = await FirebaseFirestore.instance
+      .collection('users')
+      .where('email', isEqualTo: userEmail)
+      .limit(1)
+      .get();
+
+  if (userSnapshot.docs.isEmpty) return;
+
+  final docRef = userSnapshot.docs.first.reference;
+  final userDoc = await docRef.get();
+
+  if (!userDoc.exists) return;
+
+  List<dynamic> scheduleList = userDoc.data()?['schedules'] ?? [];
+
+  if (scheduleList.isEmpty || index >= scheduleList.length) return;
+
+  scheduleList.removeAt(index);
+
+  await docRef.update({'schedules': scheduleList});
+
+  showSnackbar("Schedule Deleted", Colors.green, Colors.white, context);
+
+}catch(e){
+
+  showSnackbar("An Error Has Occurred Please Try Again", Colors.red, Colors.white, context);
+}
   
+
+
+}
+
 
 
 //   Future<List<Map<String, dynamic>>> fetchPickupSchedule() async {
@@ -64,6 +99,7 @@ Stream<DocumentSnapshot<Map<String, dynamic>>> getUserScheduleStream() {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text(
           'My waste',
           style: TextStyle(
@@ -241,24 +277,49 @@ Stream<DocumentSnapshot<Map<String, dynamic>>> getUserScheduleStream() {
             const SizedBox(height: 10),
             const Divider(color: Colors.black54, thickness: 0.5),
             const SizedBox(height: 12),
-            InkWell(
-              onTap: () {
-                showEditScheduleModal(context, schedule, index);
-              },
-              child: const Row(
-                children: [
-                  Text(
-                    'Edit schedule',
-                    style: TextStyle(
-                      color: Colors.black87,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  SizedBox(width: 6),
-                  Icon(Icons.arrow_forward_ios, size: 14, color: Colors.black87),
-                ],
-              ),
-            )
+           Row(
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    InkWell(
+      onTap: () {
+        showEditScheduleModal(context, schedule, index);
+      },
+      child: const Row(
+        children: [
+          Icon(Icons.edit, size: 16, color: Colors.black54),
+          SizedBox(width: 6),
+          Text(
+            'Edit schedule',
+            style: TextStyle(
+              color: Colors.black87,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    ),
+    InkWell(
+      onTap: () async {
+        await deleteScheduleAtIndex(context, index);
+      },
+      child: const Row(
+        children: [
+          Icon(Icons.delete, size: 16, color: Colors.redAccent),
+          SizedBox(width: 6),
+          Text(
+            'Delete',
+            style: TextStyle(
+              color: Colors.redAccent,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    ),
+  ],
+)
+
+            
           ],
         ),
       ),

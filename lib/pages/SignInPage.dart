@@ -38,7 +38,7 @@ class _SignInScreenState extends State<SignInScreen> {
   }
 
   if (password.isEmpty) {
-    showSnackbar("Password must be at least 6 characters long", Colors.red, Colors.white, context);
+    showSnackbar("Please enter your password", Colors.red, Colors.white, context);
       setState(() => _isLoading = false);
     return;
   }
@@ -90,9 +90,9 @@ class _SignInScreenState extends State<SignInScreen> {
   } on FirebaseAuthException catch (e) {
     String message = 'Sign in failed';
     if (e.code == 'user-not-found') {
-      message = 'No user found for that email.';
+      message == 'No user found for that email.';
     } else if (e.code == 'wrong-password') {
-      message = 'Wrong password.';
+      message == 'Wrong password.';
     }
     showSnackbar(message, Colors.red, Colors.white, context);
   } finally {

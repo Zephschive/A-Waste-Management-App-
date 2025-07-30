@@ -7,6 +7,7 @@ import 'package:waste_mangement_app/pages/pages_Ext.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:waste_mangement_app/Common_widgets/common_widgets.dart';
 import 'package:waste_mangement_app/pages/pages_Ext.dart';
+import 'dart:math';
 
 
 class RequestPickupScreen extends StatefulWidget {
@@ -24,6 +25,18 @@ class _RequestPickupScreenState extends State<RequestPickupScreen> {
   bool _isEditing = true;
   String? _selectedPaymentMethod;
   bool _isLoading = false;
+
+  int? _priceX;
+  int? _priceCo;
+  final _rand = Random();
+
+
+  void _generateCollectorPrices() {
+
+    _priceX = 50 + _rand.nextInt(51);
+
+    _priceCo = _rand.nextInt(91);
+  }
 
 
   void _showLoadingDialog(BuildContext context) {
@@ -294,7 +307,7 @@ void _showCollectorSelectionSheet() {
                       children: [
                         buildCollectorCard(
                           title: "Collector X",
-                          price: "GH₵ 45",
+                          price: _priceX != null ? "GH₵ $_priceX" : "–",
                           isSelected: selectedCollector == "X",
                           onTap: () {
                             setModalState(() => selectedCollector = "X");
@@ -302,7 +315,7 @@ void _showCollectorSelectionSheet() {
                         ),
                         buildCollectorCard(
                           title: "Collector Co",
-                          price: "GH₵ 60",
+                          price: _priceCo != null ? "GH₵ $_priceCo" : "–",
                           isSelected: selectedCollector == "Co",
                           onTap: () {
                             setModalState(() => selectedCollector = "Co");
@@ -532,6 +545,7 @@ Future<String?> _getCityNameFromLatLng(LatLng latLng) async {
         _selectedLocation = place;
         _searchController.text = place;
         _isEditing = false;
+        _generateCollectorPrices(); 
       });
     }
   }
@@ -561,7 +575,7 @@ Future<String?> _getCityNameFromLatLng(LatLng latLng) async {
           Expanded(
   child: _isLoading
       ? const Center(child: Row( mainAxisAlignment: MainAxisAlignment.center,children: [
-        Text("Loading........"),SizedBox(width: 15,), const Center(child: CircularProgressIndicator())
+        Text("Loading........"),SizedBox(width: 15,),  
       ],))
       : _predictions.isEmpty
           ? const Center(child: Text("Search for a location..."))
@@ -579,6 +593,7 @@ Future<String?> _getCityNameFromLatLng(LatLng latLng) async {
                       _searchController.text = _selectedLocation!;
                       _predictions.clear();
                       _isEditing = false;
+                      _generateCollectorPrices(); 
                     });
                   },
                 );

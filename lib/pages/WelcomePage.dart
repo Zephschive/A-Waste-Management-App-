@@ -32,11 +32,7 @@ Future<void> _checkIfLoggedIn() async {
   if (user != null) {
     await Future.delayed(const Duration(seconds: 1)); // Optional delay
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
+  
 
     // Fetch user document
     final querySnapshot = await FirebaseFirestore.instance
@@ -51,7 +47,15 @@ Future<void> _checkIfLoggedIn() async {
       final keepMe = data["keepMeSignedIn"] ?? false;
 
       if (keepMe) {
-        // Go to dashboard if keepMeSignedIn is true
+
+        showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+     await Future.delayed(Duration(seconds: 3),(){});
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const BottomNavController()),
@@ -60,20 +64,13 @@ Future<void> _checkIfLoggedIn() async {
       }
     }
 
-    Navigator.of(context).pop(); // Close the loading dialog
     await  Auth.signOut();
       Future.delayed(Duration(seconds: 2));
           
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const SignInScreen()),
-    );
+
   } else {
     // No user is signed in, go to SignIn screen
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const SignInScreen()),
-    );
+
   }
 }
 

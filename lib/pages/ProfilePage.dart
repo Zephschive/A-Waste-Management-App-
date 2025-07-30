@@ -162,6 +162,7 @@ Future<void> _editPhoneNumber() async {
     
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text('Profile', style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
         elevation: 0,

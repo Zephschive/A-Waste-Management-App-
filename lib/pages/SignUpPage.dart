@@ -105,7 +105,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
         children: [
           Positioned.fill(
             child: Image.asset(
-              WMA_Images.GreenDumpster_Background, // Replace with your asset path
+              WMA_Images.GreenDumpster_Background,
+       // Replace with your asset path
               fit: BoxFit.cover,
             ),
           ),

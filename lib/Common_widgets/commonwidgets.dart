@@ -4,11 +4,8 @@ import 'package:waste_mangement_app/Common_widgets/common_widgets.dart';
 import '../pages/pages_Ext.dart';
 import 'dart:math';
 import 'package:shimmer/shimmer.dart';
+import 'package:intl/intl.dart';
 
-
-import 'package:flutter/material.dart';
-import 'dart:math';
-import 'package:shimmer/shimmer.dart';
 
 Widget greetingSection(String? name, String? imagePath) {
   bool isLoading = name == null || name.isEmpty;
@@ -26,6 +23,7 @@ Widget greetingSection(String? name, String? imagePath) {
   if (isLoading) {
     return Row(
       children: [
+      
         Shimmer.fromColors(
           baseColor: Colors.grey[400]!,
           highlightColor: Colors.grey[100]!,
@@ -94,7 +92,7 @@ Widget nextPickupCard(BuildContext context) {
 
     final data = userDoc.data() as Map<String, dynamic>;
     List<Map<String, dynamic>> pickups =
-        List<Map<String, dynamic>>.from(data['pickupss'] ?? []);
+        List<Map<String, dynamic>>.from(data['pickups'] ?? []);
 
     if (pickups.isEmpty) return null;
 
@@ -767,60 +765,105 @@ class _CustomTextFieldState extends State<CustomTextField> {
 
 
 Widget nextSchedulePickupCard(BuildContext context) {
-  Future<Map<String, dynamic>?> _fetchScheduleNextPickup() async {
-    final userEmail = FirebaseAuth.instance.currentUser?.email;
-    if (userEmail == null) return null;
-
-    // First: Get the user doc ID by querying by email
-    final userSnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .where('email', isEqualTo: userEmail)
-        .limit(1)
-        .get();
-
-    if (userSnapshot.docs.isEmpty) return null;
-
-    final docId = userSnapshot.docs.first.id;
-    final userDoc =
-        await FirebaseFirestore.instance.collection('users').doc(docId).get();
-
-    if (!userDoc.exists) return null;
-
-    final data = userDoc.data() as Map<String, dynamic>;
-    List<Map<String, dynamic>> schedule =
-        List<Map<String, dynamic>>.from(data['schedule'] ?? []);
-
-    if (schedule.isEmpty) return null;
-
-    // Get the last pickup as the 'next pickup'
-    final nextPickup = schedule.last;
-    return nextPickup;
+  Color getRandomColor() {
+    final random = Random();
+    return Color.fromARGB(
+      255,
+      random.nextInt(256),
+      random.nextInt(256),
+      random.nextInt(256),
+    );
   }
 
-  Color getRandomColor() {
-  final random = Random();
-  return Color.fromARGB(
-    255, // full opacity
-    random.nextInt(256),
-    random.nextInt(256),
-    random.nextInt(256),
+  Stream<DocumentSnapshot<Map<String, dynamic>>> getUserScheduleStream() {
+  final userEmail = FirebaseAuth.instance.currentUser?.email;
+  if (userEmail == null) {
+    throw Exception('No user logged in');
+  }
+
+  return FirebaseFirestore.instance
+      .collection('users')
+      .where('email', isEqualTo: userEmail)
+      .limit(1)
+      .snapshots()
+      .map((querySnapshot) => querySnapshot.docs.first);
+}
+
+  return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+    stream: getUserScheduleStream(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const SizedBox(
+          height: 170,
+          child: Center(child: CircularProgressIndicator()),
+        );
+      }
+
+      if (!snapshot.hasData || !snapshot.data!.exists) {
+        // no doc or deleted
+        return _buildEmptyNextCard(context);
+      }
+
+      final data = snapshot.data!.data()!;
+      final raw = data['schedules'];
+      if (raw == null || raw is! List || raw.isEmpty) {
+        return _buildEmptyNextCard(context);
+      }
+
+      // pick the last one
+      final next = (raw.cast<Map<String, dynamic>>()).last;
+      final dayStr = next['day'] as String? ?? '';
+      final dateTime = DateTime.tryParse(dayStr);
+      final dateFmt = dateTime != null
+        ? DateFormat("d'${_daySuffix(dateTime.day)}' MMMM yyyy")
+              .format(dateTime)
+        : 'Unknown date';
+
+      final collector = 'Joseph Amatey';
+      return GestureDetector(
+        onTap: () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const MyWastePage()));
+        },
+        child: Container(
+          height: 170,
+          decoration: BoxDecoration(
+            image: const DecorationImage(
+              image: AssetImage(WMA_Images.YellowDump_Background),
+              fit: BoxFit.cover,
+            ),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Your next pickup', style: TextStyle(color: Colors.white70)),
+              const SizedBox(height: 4),
+              Text(dateFmt, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              const Spacer(),
+              const Text('Your current waste collector', style: TextStyle(color: Colors.white70, fontSize: 12)),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: getRandomColor(),
+                    child: Text(collector.isNotEmpty ? collector[0] : '?', style: const TextStyle(color: Colors.white)),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(collector, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    },
   );
 }
 
-   
-
-
-  return FutureBuilder<Map<String, dynamic>?>(
-    future: _fetchScheduleNextPickup(),
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Center(child: CircularProgressIndicator());
-      }
-
-      final schedule = snapshot.data;
-
-      if (schedule == null) {
-        return  Container(
+/// Builds the “empty” card when there is no upcoming pickup
+Widget _buildEmptyNextCard(BuildContext context) {
+  return Container(
               height: 170,
               decoration: BoxDecoration(
                 
@@ -853,96 +896,15 @@ Widget nextSchedulePickupCard(BuildContext context) {
                 ],
               ),
             );
-      }
+}
 
-      final dateTime = DateTime.tryParse(schedule['requestedAt'] ?? '');
-      final dateStr = dateTime != null
-          ? "${dateTime.day}/${dateTime.month}/${dateTime.year}"
-          : "Unknown Date";
-
-      final collectorName = schedule['collectorName'] ?? "Unknown";
-      final collectorImage =schedule['profileImage'];
-
-      return GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const MyWastePage()),
-          );
-        },
-        child: Container(
-              height: 170,
-              decoration: BoxDecoration(
-                
-                image: const DecorationImage(
-                  image: AssetImage(WMA_Images.YellowDump_Background), // Replace with your background image
-                  fit: BoxFit.cover,
-                  colorFilter: ColorFilter.matrix(<double>[
-  0.6, 0,   0,   0, 0, // Red – 60% intensity
-  0,   0.7, 0,   0, 0, // Green – 70% intensity
-  0,   0,   1.2, 0, 0, // Blue – boosted to 120%
-  0,   0,   0,   1, 0, // Alpha
-]),
-
-
-                
-                ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              padding: const EdgeInsets.all(16),
-              alignment: Alignment.bottomLeft,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Your next pickup',
-                    style: TextStyle(color: Colors.white, fontSize: 14),
-                  ),
-                  const SizedBox(height: 4),
-                   Text(
-                    dateStr,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Divider( color: Colors.white,  thickness:0.2 ,),
-                  const SizedBox(height: 5),
-                  Row(
-                    children: [
-                      const Text(
-                        'Your current waste collector',
-                        style: TextStyle(color: Colors.white70, fontSize: 12),
-                      ),
-                      const Spacer(),
-                      
-                    ],
-                  ),
-                     const SizedBox(height: 5),
-                  Row(
-                    children: [
-                      const CircleAvatar(
-                        radius: 14,
-                        backgroundImage: AssetImage(WMA_profiles.Profile_3), // Replace with actual image
-                      ),
-
-                      Container(
-                      width: 140,
-                        padding: EdgeInsets.only(left: 15),
-                        child: const Text(
-                          'Joseph Amatey',
-                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900),
-                        ),
-                      ),
-                    ],
-                  )
-                ],
-              ),
-            ),
-      );
-    },
-  );
+/// Utility to get “st”, “nd”, “rd”, “th”
+String _daySuffix(int day) {
+  if (day >= 11 && day <= 13) return 'th';
+  switch (day % 10) {
+    case 1: return 'st';
+    case 2: return 'nd';
+    case 3: return 'rd';
+    default: return 'th';
+  }
 }
